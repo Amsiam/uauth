@@ -3,6 +3,9 @@
  * One auth SDK. Any backend. Your data.
  */
 
+import { UniversalAuthSDK } from './auth';
+import type { User, AuthConfig, UniversalAuth } from './types';
+
 export { UniversalAuthSDK } from './auth';
 export { ApiClient } from './client';
 export {
@@ -45,9 +48,9 @@ export type {
 /**
  * Create a new Universal Auth SDK instance
  */
-export function createAuth<U extends import('./types').User = import('./types').User>(
-  config: import('./types').AuthConfig
-): import('./types').UniversalAuth<U> {
+export function createAuth<U extends User = User>(
+  config: AuthConfig
+): UniversalAuth<U> {
   return new UniversalAuthSDK<U>(config);
 }
 

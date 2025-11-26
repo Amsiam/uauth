@@ -16,8 +16,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
-    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "build": "tsc && tsup src/index.ts --format cjs,esm --clean",
+    "build:dts": "tsc --emitDeclarationOnly",
+    "dev": "tsup src/index.ts --format cjs,esm --watch",
     "test": "vitest run",
     "test:watch": "vitest"
   },
