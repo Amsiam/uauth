@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { createAuth, createOAuth2Plugin } from 'universal-auth-sdk'
+import { createAuth, createOAuth2Plugin } from '@uauth/core'
 import {
   AuthProvider,
   useAuth,
@@ -7,8 +7,8 @@ import {
   OAuth2Provider,
   useOAuth2,
   OAuthButton,
-} from 'universal-auth-sdk-react'
-import type { OAuthButtonRenderProps, SignInData, OAuth2ProviderConfig } from 'universal-auth-sdk-react'
+} from '@uauth/react'
+import type { OAuthButtonRenderProps, SignInData, OAuth2ProviderConfig } from '@uauth/react'
 import './App.css'
 
 // Create auth instance

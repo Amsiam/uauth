@@ -1,5 +1,5 @@
 {
-  "name": "universal-auth-sdk-react",
+  "name": "@uauth/react",
   "version": "1.0.0",
   "description": "React hooks and components for Universal Auth SDK",
   "main": "./dist/index.js",
@@ -16,7 +16,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.tsx --format cjs,esm --clean",
+    "build": "tsup src/index.tsx --format cjs,esm --clean && tsc --emitDeclarationOnly --outDir dist",
     "build:types": "tsc --emitDeclarationOnly",
     "dev": "tsup src/index.tsx --format cjs,esm --watch",
     "test": "vitest run",
@@ -32,7 +32,7 @@
   "license": "MIT",
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
-    "universal-auth-sdk": "^1.0.0"
+    "@uauth/core": "^1.0.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.1.5",
@@ -48,6 +48,6 @@
     "vitest": "^1.0.4"
   },
   "dependencies": {
-    "universal-auth-sdk": "file:../core"
+    "@uauth/core": "file:../core"
   }
 }

@@ -55,11 +55,20 @@ export type {
 } from './types';
 
 /**
- * Create a new Universal Auth SDK instance
+ * Create a new Universal Auth SDK instance (client-side)
+ *
+ * @throws Error if used in a server environment (Node.js without window)
  */
 export function createAuth<U extends User = User>(
   config: AuthConfig
 ): UniversalAuth<U> {
+  // Warn if used on server (but don't block - some SSR frameworks hydrate)
+  if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
+    console.warn(
+      '[@uauth/core] createAuth() is designed for client-side use. ' +
+      'For server-side authentication, use createServerAuth() from "@uauth/server" instead.'
+    );
+  }
   return new UniversalAuthSDK<U>(config);
 }
 

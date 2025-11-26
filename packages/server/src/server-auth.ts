@@ -4,7 +4,7 @@ import type {
   SessionData,
   User,
   AuthTokens,
-} from 'universal-auth-sdk';
+} from '@uauth/core';
 import { parseCookies } from './cookies';
 
 export interface ServerAuthConfig extends Omit<AuthConfig, 'storage'> {
@@ -112,9 +112,18 @@ export class ServerAuth<U extends User = User> {
 
 /**
  * Create a server-side auth client
+ *
+ * @throws Error if used in a browser environment
  */
 export function createServerAuth<U extends User = User>(
   config: ServerAuthConfig
 ): ServerAuth<U> {
+  // Error if used in browser
+  if (typeof window !== 'undefined') {
+    throw new Error(
+      '[@uauth/server] createServerAuth() is for server-side use only. ' +
+      'For client-side authentication, use createAuth() from "@uauth/core" instead.'
+    );
+  }
   return new ServerAuth<U>(config);
 }

@@ -13,7 +13,7 @@ import type {
   SignUpPayload,
   ApiResponse,
   SessionData,
-} from 'universal-auth-sdk';
+} from '@uauth/core';
 
 export interface AuthContextValue<U extends User = User> {
   user: U | null;
@@ -168,20 +168,20 @@ export function AuthProvider<U extends User = User>({
     }
   }, [auth, loadSession]);
 
-  const value: AuthContextValue<U> = {
+  const value = {
     user: user as U,
     isLoading,
     isAuthenticated: user !== null,
     error,
-    signIn,
-    signUp,
+    signIn: signIn as AuthContextValue<U>['signIn'],
+    signUp: signUp as AuthContextValue<U>['signUp'],
     signOut,
     refresh,
     refetch: loadSession,
     setUser: setUser as (user: U | null) => void,
-  };
+  } satisfies AuthContextValue<U>;
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value as AuthContextValue}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth<U extends User = User>(): AuthContextValue<U> {
@@ -191,5 +191,5 @@ export function useAuth<U extends User = User>(): AuthContextValue<U> {
     throw new Error('useAuth must be used within an AuthProvider');
   }
 
-  return context as AuthContextValue<U>;
+  return context as unknown as AuthContextValue<U>;
 }

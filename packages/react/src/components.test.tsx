@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { RequireAuth, GuestOnly, AuthGuard } from './components'
 import { AuthProvider } from './context'
-import type { UniversalAuth, User } from 'universal-auth-sdk'
+import type { UniversalAuth, User } from '@uauth/core'
 
 const createMockAuth = (): UniversalAuth => ({
   signIn: vi.fn(),

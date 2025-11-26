@@ -1,5 +1,5 @@
 {
-  "name": "universal-auth-sdk",
+  "name": "@uauth/core",
   "version": "1.0.0",
   "description": "Universal authentication SDK that works with any backend",
   "main": "./dist/index.js",
@@ -16,7 +16,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc && tsup src/index.ts --format cjs,esm --clean",
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
     "build:dts": "tsc --emitDeclarationOnly",
     "dev": "tsup src/index.ts --format cjs,esm --watch",
     "test": "vitest run",

@@ -13,7 +13,7 @@ import {
   OAuthCallback,
 } from './oauth2';
 import { AuthProvider } from './context';
-import type { UniversalAuth, OAuth2Provider as OAuth2ProviderType } from 'universal-auth-sdk';
+import type { UniversalAuth, OAuth2Provider as OAuth2ProviderType } from '@uauth/core';
 
 // Mock providers
 const mockProviders: OAuth2ProviderType[] = [

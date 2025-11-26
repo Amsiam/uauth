@@ -35,4 +35,4 @@ export type {
   ApiResponse,
   OAuth2Provider as OAuth2ProviderConfig,
   OAuth2FlowOptions,
-} from 'universal-auth-sdk';
+} from '@uauth/core';

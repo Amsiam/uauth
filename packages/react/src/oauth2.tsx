@@ -13,7 +13,7 @@ import type {
   SignInData,
   OAuth2Provider,
   OAuth2FlowOptions,
-} from 'universal-auth-sdk';
+} from '@uauth/core';
 import { useAuth } from './context';
 
 /**
@@ -112,7 +112,7 @@ export function OAuth2Provider({
       setError(null);
 
       try {
-        const result = await oauth2.signInWithPopup<U>(options);
+        const result = await oauth2.signInWithPopup(options) as ApiResponse<SignInData<U>>;
         return result;
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Sign in failed');
@@ -163,7 +163,7 @@ export function OAuth2Provider({
       setError(null);
 
       try {
-        const result = await oauth2.handleCallback<U>();
+        const result = await oauth2.handleCallback() as ApiResponse<SignInData<U>>;
         return result;
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Callback handling failed');

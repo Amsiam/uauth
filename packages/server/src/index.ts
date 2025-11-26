@@ -21,4 +21,4 @@ export type {
   SessionData,
   ApiResponse,
   ApiError,
-} from 'universal-auth-sdk';
+} from '@uauth/core';

@@ -11,8 +11,8 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "universal-auth-sdk": "file:../../packages/core",
-    "universal-auth-sdk-react": "file:../../packages/react"
+    "@uauth/core": "file:../../packages/core",
+    "@uauth/react": "file:../../packages/react"
   },
   "devDependencies": {
     "@types/react": "^18.2.45",
