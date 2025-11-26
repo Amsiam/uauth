@@ -8,6 +8,7 @@ from passlib.context import CryptContext
 from fastapi import HTTPException, Depends, Header
 from sqlalchemy.orm import Session
 import uuid
+import secrets
 
 from config import get_settings
 from models import User, RefreshToken, get_db
@@ -26,6 +27,15 @@ def hash_password(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against a hash"""
     return pwd_context.verify(plain_password, hashed_password)
+
+
+def generate_random_password() -> str:
+    """
+    Generate a cryptographically secure random password.
+    Used for OAuth2 users as defense in depth - they won't use it,
+    but it prevents any authentication bugs from being exploitable.
+    """
+    return secrets.token_urlsafe(32)
 
 
 def create_access_token(user_id: str, expires_delta: Optional[timedelta] = None) -> str:
@@ -95,10 +105,19 @@ def verify_refresh_token(db: Session, token: str) -> Optional[RefreshToken]:
 
 
 def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
-    """Authenticate a user with email and password"""
+    """
+    Authenticate a user with email and password.
+
+    Security: Blocks password authentication for OAuth users to prevent
+    account takeover even if there's a bug in the authentication logic.
+    """
     user = db.query(User).filter(User.email == email).first()
 
     if not user:
+        return None
+
+    # Block password login for OAuth users (defense in depth)
+    if user.oauth_provider:
         return None
 
     if not verify_password(password, user.hashed_password):
@@ -193,3 +212,18 @@ def revoke_all_user_tokens(db: Session, user_id: str) -> int:
     count = db.query(RefreshToken).filter(RefreshToken.user_id == user_id).delete()
     db.commit()
     return count
+
+
+def create_token_pair(db: Session, user_id: str) -> dict:
+    """
+    Create both access and refresh tokens for a user.
+    Returns a dict with access_token, refresh_token, and expires_in.
+    """
+    access_token = create_access_token(user_id)
+    refresh_token_str, _ = create_refresh_token(db, user_id)
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token_str,
+        "expires_in": settings.access_token_expire_minutes * 60,
+    }

@@ -28,6 +28,7 @@ export interface AuthContextValue<U extends User = User> {
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
   refetch: () => Promise<void>;
+  setUser: (user: U | null) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -177,6 +178,7 @@ export function AuthProvider<U extends User = User>({
     signOut,
     refresh,
     refetch: loadSession,
+    setUser: setUser as (user: U | null) => void,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -15,6 +15,15 @@ export {
   createStorageAdapter,
 } from './storage';
 
+// Plugins
+export { OAuth2Plugin, createOAuth2Plugin } from './plugins/oauth2';
+export type {
+  OAuth2Provider,
+  OAuth2ProvidersResponse,
+  OAuth2FlowOptions,
+  OAuth2CallbackData,
+} from './plugins/oauth2';
+
 export type {
   // Main interfaces
   UniversalAuth,

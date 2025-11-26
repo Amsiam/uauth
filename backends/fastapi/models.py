@@ -30,7 +30,9 @@ class User(Base):
     id = Column(String, primary_key=True, default=lambda: f"usr_{uuid.uuid4().hex[:16]}")
     email = Column(String, unique=True, nullable=False, index=True)
     name = Column(String, nullable=True)
-    hashed_password = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=False)  # Always set, random for OAuth users
+    oauth_provider = Column(String, nullable=True)  # e.g., 'google', 'github'
+    oauth_provider_user_id = Column(String, nullable=True)  # User ID from OAuth2 provider
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

@@ -6,9 +6,10 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from unittest.mock import patch, AsyncMock
 from main import app
 from models import Base, get_db, User, RefreshToken
-from auth_utils import hash_password
+from auth_utils import hash_password, generate_random_password
 from config import get_settings
 
 # Test database setup
@@ -419,3 +420,244 @@ class TestResponseFormat:
         assert data["error"] is not None
         assert "code" in data["error"]
         assert "message" in data["error"]
+
+
+class TestOAuth2Providers:
+    def test_get_providers_empty(self):
+        """Test getting providers when none are configured"""
+        response = client.get("/auth/providers")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["ok"] is True
+        # No providers configured by default (empty client_id/secret)
+        assert data["data"]["providers"] == []
+
+    @patch("main.get_enabled_providers")
+    def test_get_providers_with_configured(self, mock_providers):
+        """Test getting providers when some are configured"""
+        from oauth2_utils import OAuth2ProviderConfig
+
+        mock_providers.return_value = [
+            OAuth2ProviderConfig(
+                name="google",
+                display_name="Google",
+                authorization_url="https://accounts.google.com/o/oauth2/v2/auth",
+                token_url="https://oauth2.googleapis.com/token",
+                userinfo_url="https://www.googleapis.com/oauth2/v2/userinfo",
+                client_id="test-client-id",
+                client_secret="test-secret",
+                scope="openid email profile",
+            )
+        ]
+
+        response = client.get("/auth/providers")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["ok"] is True
+        assert len(data["data"]["providers"]) == 1
+        assert data["data"]["providers"][0]["name"] == "google"
+        assert data["data"]["providers"][0]["clientId"] == "test-client-id"
+        # Client secret should NOT be returned
+        assert "clientSecret" not in data["data"]["providers"][0]
+
+
+class TestOAuth2SignIn:
+    @patch("main.exchange_oauth2_code")
+    def test_oauth2_sign_in_success(self, mock_exchange):
+        """Test successful OAuth2 sign in with new user"""
+        mock_exchange.return_value = {
+            "email": "oauth@example.com",
+            "name": "OAuth User",
+            "provider_user_id": "12345",
+            "provider": "google",
+        }
+
+        response = client.post(
+            "/auth/sign-in/oauth2",
+            json={
+                "provider": "google",
+                "code": "auth-code-123",
+                "redirect_uri": "http://localhost:3000/callback",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["ok"] is True
+        assert data["data"]["user"]["email"] == "oauth@example.com"
+        assert data["data"]["user"]["name"] == "OAuth User"
+        assert "access_token" in data["data"]["tokens"]
+        assert "refresh_token" in data["data"]["tokens"]
+
+    @patch("main.exchange_oauth2_code")
+    def test_oauth2_sign_in_existing_user(self, mock_exchange, test_user):
+        """Test OAuth2 sign in with existing password user"""
+        mock_exchange.return_value = {
+            "email": test_user.email,
+            "name": "Test User",
+            "provider_user_id": "12345",
+            "provider": "google",
+        }
+
+        response = client.post(
+            "/auth/sign-in/oauth2",
+            json={
+                "provider": "google",
+                "code": "auth-code-123",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["ok"] is True
+        assert data["data"]["user"]["email"] == test_user.email
+
+    @patch("main.exchange_oauth2_code")
+    def test_oauth2_sign_in_different_provider(self, mock_exchange):
+        """Test OAuth2 sign in when account exists with different provider"""
+        # First create an OAuth user
+        db = TestingSessionLocal()
+        oauth_user = User(
+            email="oauth@example.com",
+            name="OAuth User",
+            hashed_password=hash_password(generate_random_password()),
+            oauth_provider="github",
+            oauth_provider_user_id="github-123",
+        )
+        db.add(oauth_user)
+        db.commit()
+        db.close()
+
+        # Try to sign in with different provider
+        mock_exchange.return_value = {
+            "email": "oauth@example.com",
+            "name": "OAuth User",
+            "provider_user_id": "google-456",
+            "provider": "google",
+        }
+
+        response = client.post(
+            "/auth/sign-in/oauth2",
+            json={
+                "provider": "google",
+                "code": "auth-code-123",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["ok"] is False
+        assert data["error"]["code"] == "ACCOUNT_EXISTS"
+        assert "github" in data["error"]["message"]
+
+    @patch("main.exchange_oauth2_code")
+    def test_oauth2_sign_in_no_email(self, mock_exchange):
+        """Test OAuth2 sign in when provider doesn't return email"""
+        mock_exchange.return_value = {
+            "email": None,
+            "name": "No Email User",
+            "provider_user_id": "12345",
+            "provider": "google",
+        }
+
+        response = client.post(
+            "/auth/sign-in/oauth2",
+            json={
+                "provider": "google",
+                "code": "auth-code-123",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["ok"] is False
+        assert data["error"]["code"] == "OAUTH2_NO_EMAIL"
+
+    @patch("main.exchange_oauth2_code")
+    def test_oauth2_sign_in_provider_error(self, mock_exchange):
+        """Test OAuth2 sign in when provider exchange fails"""
+        mock_exchange.side_effect = ValueError("Failed to exchange code")
+
+        response = client.post(
+            "/auth/sign-in/oauth2",
+            json={
+                "provider": "google",
+                "code": "invalid-code",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["ok"] is False
+        assert data["error"]["code"] == "OAUTH2_ERROR"
+
+
+class TestOAuth2Security:
+    def test_oauth_user_cannot_password_login(self):
+        """Test that OAuth users cannot use password login"""
+        # Create an OAuth user
+        db = TestingSessionLocal()
+        oauth_user = User(
+            email="oauthonly@example.com",
+            name="OAuth Only User",
+            hashed_password=hash_password("known-random-password"),
+            oauth_provider="google",
+            oauth_provider_user_id="google-123",
+        )
+        db.add(oauth_user)
+        db.commit()
+        db.close()
+
+        # Try to sign in with password (even if someone knows the random password)
+        response = client.post(
+            "/auth/sign-in/password",
+            json={
+                "email": "oauthonly@example.com",
+                "password": "known-random-password",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["ok"] is False
+        assert data["error"]["code"] == "INVALID_CREDENTIALS"
+
+
+class TestOAuth2PluginManifest:
+    def test_manifest_without_oauth_providers(self):
+        """Test manifest when no OAuth providers configured"""
+        response = client.get("/.well-known/auth-plugin-manifest.json")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "password" in data["plugins"]
+        # oauth2 not in plugins when not configured
+        assert data["features"]["password"] is True
+
+    @patch("main.get_enabled_providers")
+    def test_manifest_with_oauth_providers(self, mock_providers):
+        """Test manifest when OAuth providers are configured"""
+        from oauth2_utils import OAuth2ProviderConfig
+
+        mock_providers.return_value = [
+            OAuth2ProviderConfig(
+                name="google",
+                display_name="Google",
+                authorization_url="https://accounts.google.com/o/oauth2/v2/auth",
+                token_url="https://oauth2.googleapis.com/token",
+                userinfo_url="https://www.googleapis.com/oauth2/v2/userinfo",
+                client_id="test-client-id",
+                client_secret="test-secret",
+                scope="openid email profile",
+            )
+        ]
+
+        response = client.get("/.well-known/auth-plugin-manifest.json")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "oauth2" in data["plugins"]
+        assert data["features"]["oauth2"] is True
+        assert "google" in data["oauth2_providers"]

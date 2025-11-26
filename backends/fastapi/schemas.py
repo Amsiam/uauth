@@ -75,3 +75,24 @@ class SessionResponse(BaseModel):
 
 class SignOutResponse(BaseModel):
     ok: bool
+
+
+# OAuth2 schemas
+class OAuth2ProviderConfig(BaseModel):
+    name: str
+    displayName: Optional[str] = None
+    authorizationUrl: str
+    clientId: str
+    scope: Optional[str] = None
+    redirectUri: Optional[str] = None
+    additionalParams: Optional[dict] = None
+
+
+class OAuth2ProvidersResponse(BaseModel):
+    providers: list[OAuth2ProviderConfig]
+
+
+class OAuth2SignInRequest(BaseModel):
+    provider: str
+    code: str
+    redirect_uri: Optional[str] = None

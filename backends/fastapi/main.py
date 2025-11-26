@@ -20,6 +20,9 @@ from schemas import (
     SignOutResponse,
     UserResponse,
     TokenPair,
+    OAuth2SignInRequest,
+    OAuth2ProvidersResponse,
+    OAuth2ProviderConfig,
 )
 from auth_utils import (
     authenticate_user,
@@ -29,7 +32,10 @@ from auth_utils import (
     verify_refresh_token,
     get_current_user,
     revoke_all_user_tokens,
+    create_token_pair,
+    generate_random_password,
 )
+from oauth2_utils import get_enabled_providers, exchange_oauth2_code
 
 settings = get_settings()
 
@@ -58,16 +64,116 @@ app.add_middleware(
 )
 
 
-def create_token_pair(db: Session, user_id: str) -> TokenPair:
-    """Create access and refresh tokens"""
-    access_token = create_access_token(user_id)
-    refresh_token_str, _ = create_refresh_token(db, user_id)
+@app.get("/auth/providers", response_model=ApiResponse)
+async def get_oauth_providers():
+    """Get available OAuth2 providers"""
+    providers = get_enabled_providers()
 
-    return TokenPair(
-        access_token=access_token,
-        refresh_token=refresh_token_str,
-        expires_in=settings.access_token_expire_minutes * 60,
+    provider_configs = [
+        OAuth2ProviderConfig(
+            name=p.name,
+            displayName=p.display_name,
+            authorizationUrl=p.authorization_url,
+            clientId=p.client_id,
+            scope=p.scope,
+            redirectUri=p.redirect_uri,
+        )
+        for p in providers
+    ]
+
+    return ApiResponse(
+        ok=True,
+        data=OAuth2ProvidersResponse(providers=provider_configs).model_dump(),
     )
+
+
+@app.post("/auth/sign-in/oauth2", response_model=ApiResponse)
+async def sign_in_oauth2(
+    request: OAuth2SignInRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Sign in with OAuth2.
+    Exchange authorization code for user info and create/sign in user.
+    """
+    try:
+        # Exchange code with OAuth2 provider for user info
+        user_info = await exchange_oauth2_code(
+            request.provider,
+            request.code,
+            request.redirect_uri
+        )
+
+        if not user_info.get("email"):
+            return ApiResponse(
+                ok=False,
+                error=ApiError(
+                    code="OAUTH2_NO_EMAIL",
+                    message="OAuth2 provider did not return email",
+                ),
+            )
+
+        # Find or create user
+        user = db.query(User).filter(User.email == user_info["email"]).first()
+
+        if user:
+            # Existing user - verify it's the same OAuth provider or password user upgrading
+            if user.oauth_provider and user.oauth_provider != request.provider:
+                return ApiResponse(
+                    ok=False,
+                    error=ApiError(
+                        code="ACCOUNT_EXISTS",
+                        message=f"An account with this email already exists via {user.oauth_provider}",
+                    ),
+                )
+            # Update OAuth info if not set (password user signing in with OAuth)
+            if not user.oauth_provider:
+                user.oauth_provider = request.provider
+                user.oauth_provider_user_id = user_info.get("provider_user_id")
+                # Generate random password as defense in depth
+                user.hashed_password = hash_password(generate_random_password())
+                db.commit()
+        else:
+            # Create new OAuth user
+            user = User(
+                email=user_info["email"],
+                name=user_info.get("name"),
+                hashed_password=hash_password(generate_random_password()),
+                oauth_provider=request.provider,
+                oauth_provider_user_id=user_info.get("provider_user_id"),
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+        # Create tokens
+        tokens_dict = create_token_pair(db, user.id)
+        tokens = TokenPair(**tokens_dict)
+
+        return ApiResponse(
+            ok=True,
+            data=SignInResponse(
+                user=UserResponse.model_validate(user),
+                tokens=tokens,
+            ).model_dump(),
+        )
+
+    except ValueError as e:
+        return ApiResponse(
+            ok=False,
+            error=ApiError(
+                code="OAUTH2_ERROR",
+                message=str(e),
+            ),
+        )
+    except Exception as e:
+        return ApiResponse(
+            ok=False,
+            error=ApiError(
+                code="INTERNAL_ERROR",
+                message=f"An error occurred: {str(e)}",
+            ),
+        )
 
 
 @app.post("/auth/sign-in/password", response_model=ApiResponse)
@@ -87,7 +193,8 @@ async def sign_in_password(
             ),
         )
 
-    tokens = create_token_pair(db, user.id)
+    tokens_dict = create_token_pair(db, user.id)
+    tokens = TokenPair(**tokens_dict)
 
     return ApiResponse(
         ok=True,
@@ -128,7 +235,8 @@ async def sign_up(
     db.commit()
     db.refresh(new_user)
 
-    tokens = create_token_pair(db, new_user.id)
+    tokens_dict = create_token_pair(db, new_user.id)
+    tokens = TokenPair(**tokens_dict)
 
     return ApiResponse(
         ok=True,
@@ -157,7 +265,8 @@ async def refresh_token(
         )
 
     # Create new token pair (token rotation)
-    tokens = create_token_pair(db, refresh_token_obj.user_id)
+    tokens_dict = create_token_pair(db, refresh_token_obj.user_id)
+    tokens = TokenPair(**tokens_dict)
 
     # Optionally revoke old refresh token (for stricter security)
     # db.delete(refresh_token_obj)
@@ -199,15 +308,19 @@ async def sign_out(
 @app.get("/.well-known/auth-plugin-manifest.json")
 async def plugin_manifest():
     """Return plugin manifest"""
+    enabled_providers = get_enabled_providers()
+    oauth2_enabled = len(enabled_providers) > 0
+
     return {
         "version": "1.0.0",
-        "plugins": ["password"],  # Add more as you implement them
+        "plugins": ["password"] + (["oauth2"] if oauth2_enabled else []),
         "features": {
             "password": True,
-            "oauth2": False,
+            "oauth2": oauth2_enabled,
             "magic-link": False,
             "totp": False,
         },
+        "oauth2_providers": [p.name for p in enabled_providers] if oauth2_enabled else [],
     }
 
 

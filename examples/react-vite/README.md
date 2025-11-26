@@ -5,6 +5,7 @@ A complete example application demonstrating the Universal Auth SDK with React a
 ## Features
 
 - ✅ Sign up / Sign in forms
+- ✅ OAuth2 authentication (Google, GitHub)
 - ✅ Protected dashboard
 - ✅ Automatic token refresh
 - ✅ Loading states
@@ -21,6 +22,7 @@ First, make sure the FastAPI backend is running:
 cd ../../backends/fastapi
 pip install -r requirements.txt
 cp .env.example .env
+# Edit .env to configure OAuth2 providers (optional)
 uvicorn main:app --reload
 ```
 
@@ -32,13 +34,48 @@ The backend should be running at `http://localhost:8000`
 npm install
 ```
 
-### 3. Run the Development Server
+### 3. Configure Environment (Optional)
+
+```bash
+cp .env.example .env
+# Edit .env if you need to change the API URL
+```
+
+### 4. Run the Development Server
 
 ```bash
 npm run dev
 ```
 
 Open `http://localhost:5173` in your browser.
+
+## OAuth2 Setup (Optional)
+
+To enable OAuth2 sign-in (Google, GitHub), configure the backend:
+
+### Google OAuth2
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Create OAuth 2.0 credentials
+3. Add `http://localhost:5173/auth/callback` to Authorized redirect URIs
+4. Copy Client ID and Client Secret to backend `.env`:
+   ```
+   GOOGLE_CLIENT_ID=your-client-id
+   GOOGLE_CLIENT_SECRET=your-client-secret
+   ```
+
+### GitHub OAuth2
+
+1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
+2. Create a new OAuth App
+3. Set Authorization callback URL to `http://localhost:5173/auth/callback`
+4. Copy Client ID and Client Secret to backend `.env`:
+   ```
+   GITHUB_CLIENT_ID=your-client-id
+   GITHUB_CLIENT_SECRET=your-client-secret
+   ```
+
+Restart the backend after configuring OAuth2 providers.
 
 ## Usage
 
