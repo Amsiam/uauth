@@ -1,0 +1,45 @@
+{
+  "name": "universal-auth-sdk-server",
+  "version": "1.0.0",
+  "description": "Server-side utilities for Universal Auth SDK (Next.js, Node.js)",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "auth",
+    "authentication",
+    "nextjs",
+    "server",
+    "ssr"
+  ],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "universal-auth-sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@vitest/ui": "^1.0.4",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3",
+    "vitest": "^1.0.4"
+  },
+  "dependencies": {
+    "universal-auth-sdk": "file:../core"
+  }
+}
