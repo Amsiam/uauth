@@ -2,24 +2,33 @@
 
 React hooks and components for Universal Auth SDK.
 
-## Installation
+## Setup Guide
+
+### Step 1: Install Packages
 
 ```bash
 npm install @uauth/core @uauth/react
 ```
 
-## Quick Start
+### Step 2: Create Auth Instance
 
 ```tsx
+// lib/auth.ts
 import { createAuth } from '@uauth/core'
-import { AuthProvider, useAuth } from '@uauth/react'
 
-// Create auth instance
-const auth = createAuth({
-  baseURL: 'https://api.yourapp.com/auth'
+export const auth = createAuth({
+  baseURL: 'https://api.yourapp.com/auth',
+  storage: localStorage,
 })
+```
 
-// Wrap your app
+### Step 3: Wrap Your App with AuthProvider
+
+```tsx
+// App.tsx
+import { AuthProvider } from '@uauth/react'
+import { auth } from './lib/auth'
+
 function App() {
   return (
     <AuthProvider auth={auth}>
@@ -27,181 +36,26 @@ function App() {
     </AuthProvider>
   )
 }
-
-// Use in components
-function Profile() {
-  const { user, isLoading, signOut } = useAuth()
-
-  if (isLoading) return <div>Loading...</div>
-  if (!user) return <div>Please log in</div>
-
-  return (
-    <div>
-      <h1>Welcome {user.name}</h1>
-      <button onClick={signOut}>Sign Out</button>
-    </div>
-  )
-}
 ```
 
-## API Reference
-
-### Components
-
-#### `<AuthProvider>`
-
-Provides authentication context to your app.
+### Step 4: Create Login Form
 
 ```tsx
-<AuthProvider
-  auth={authInstance}
-  loadOnMount={true}  // Optional: load session on mount (default: true)
->
-  {children}
-</AuthProvider>
-```
+import { useState } from 'react'
+import { useAuth } from '@uauth/react'
 
-**Props:**
-
-- `auth` (required): Auth instance from `createAuth()`
-- `loadOnMount` (optional): Whether to load session on mount (default: `true`)
-- `children`: React children
-
-#### `<RequireAuth>`
-
-Only renders children if user is authenticated.
-
-```tsx
-<RequireAuth
-  fallback={<LoginPage />}
-  loadingFallback={<LoadingSpinner />}
->
-  <ProtectedContent />
-</RequireAuth>
-```
-
-**Props:**
-
-- `children`: Content to show when authenticated
-- `fallback`: Content to show when not authenticated (default: `null`)
-- `loadingFallback`: Content to show while checking auth (default: `null`)
-
-**Example:**
-
-```tsx
-function App() {
-  return (
-    <RequireAuth fallback={<LoginPage />}>
-      <Dashboard />
-    </RequireAuth>
-  )
-}
-```
-
-#### `<GuestOnly>`
-
-Only renders children if user is NOT authenticated.
-
-```tsx
-<GuestOnly fallback={<Dashboard />}>
-  <LoginPage />
-</GuestOnly>
-```
-
-**Props:**
-
-- `children`: Content to show when not authenticated
-- `fallback`: Content to show when authenticated (default: `null`)
-- `loadingFallback`: Content to show while checking auth (default: `null`)
-
-**Example:**
-
-```tsx
-function LoginRoute() {
-  return (
-    <GuestOnly fallback={<Navigate to="/dashboard" />}>
-      <LoginPage />
-    </GuestOnly>
-  )
-}
-```
-
-#### `<AuthGuard>`
-
-Advanced guard with custom check function.
-
-```tsx
-<AuthGuard
-  check={(user) => user.role === 'admin'}
-  fallback={<AccessDenied />}
->
-  <AdminPanel />
-</AuthGuard>
-```
-
-**Props:**
-
-- `children`: Content or function `(user) => ReactNode`
-- `check`: Optional check function `(user) => boolean`
-- `fallback`: Content to show when check fails (default: `null`)
-- `loadingFallback`: Content to show while loading (default: `null`)
-
-**Examples:**
-
-```tsx
-// Role-based access
-<AuthGuard check={(user) => user.role === 'admin'}>
-  <AdminPanel />
-</AuthGuard>
-
-// Render function with user
-<AuthGuard>
-  {(user) => <div>Hello {user.name}</div>}
-</AuthGuard>
-
-// Multiple conditions
-<AuthGuard
-  check={(user) => user.verified && user.subscription === 'pro'}
-  fallback={<UpgradePrompt />}
->
-  <PremiumFeature />
-</AuthGuard>
-```
-
-### Hooks
-
-#### `useAuth()`
-
-Main hook for accessing auth state and methods.
-
-```tsx
-const {
-  user,             // Current user or null
-  isLoading,        // Loading state
-  isAuthenticated,  // True if user is logged in
-  error,            // Last error or null
-  signIn,           // Sign in function
-  signUp,           // Sign up function
-  signOut,          // Sign out function
-  refresh,          // Refresh tokens
-  refetch           // Reload session
-} = useAuth()
-```
-
-**Example: Login Form**
-
-```tsx
 function LoginForm() {
   const { signIn, isLoading, error } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const result = await signIn('password', { email, password })
 
     if (result.ok) {
       // Redirect or show success
+      console.log('Logged in:', result.data?.user)
     }
   }
 
@@ -211,11 +65,13 @@ function LoginForm() {
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
       />
       <input
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
+        placeholder="Password"
       />
       <button type="submit" disabled={isLoading}>
         {isLoading ? 'Signing in...' : 'Sign In'}
@@ -226,65 +82,208 @@ function LoginForm() {
 }
 ```
 
-**Example: Sign Up Form**
+### Step 5: Create Protected Content
 
 ```tsx
-function SignUpForm() {
-  const { signUp, isLoading } = useAuth()
+import { RequireAuth, useAuth } from '@uauth/react'
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    const formData = new FormData(e.target)
-
-    const result = await signUp({
-      email: formData.get('email'),
-      password: formData.get('password'),
-      name: formData.get('name')
-    })
-
-    if (result.ok) {
-      // User is automatically signed in after signup
-    }
-  }
+function Dashboard() {
+  const { user, signOut } = useAuth()
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input name="name" placeholder="Name" />
-      <input name="email" type="email" placeholder="Email" />
-      <input name="password" type="password" placeholder="Password" />
-      <button disabled={isLoading}>Sign Up</button>
-    </form>
+    <div>
+      <h1>Welcome {user?.name}</h1>
+      <button onClick={signOut}>Sign Out</button>
+    </div>
+  )
+}
+
+function App() {
+  return (
+    <RequireAuth fallback={<LoginForm />}>
+      <Dashboard />
+    </RequireAuth>
   )
 }
 ```
 
-**Example: User Profile**
+That's it! Your React app now has full authentication support.
+
+---
+
+## Use Cases
+
+### Email/Password Authentication
 
 ```tsx
-function UserProfile() {
-  const { user, signOut, isLoading } = useAuth()
+const { signIn, signUp, isLoading, error } = useAuth()
 
-  if (isLoading) {
-    return <div>Loading...</div>
-  }
+// Sign in
+const result = await signIn('password', { email, password })
 
-  if (!user) {
-    return <div>Please log in</div>
-  }
+// Sign up
+const result = await signUp({ email, password, name })
+```
+
+### OAuth Authentication (Optional)
+
+OAuth is completely optional. If you don't need OAuth, skip this section - no extra network requests will be made.
+
+To add OAuth support:
+
+**1. Add the OAuth2 plugin to AuthProvider:**
+
+```tsx
+import { createAuth, createOAuth2Plugin } from '@uauth/core'
+import { AuthProvider } from '@uauth/react'
+
+const auth = createAuth({
+  baseURL: 'https://api.yourapp.com/auth',
+  storage: localStorage,
+})
+
+// Only include if you want OAuth
+const plugins = [createOAuth2Plugin()]
+
+function App() {
+  return (
+    <AuthProvider auth={auth} plugins={plugins}>
+      <YourApp />
+    </AuthProvider>
+  )
+}
+```
+
+**2. Use the `useOAuth` hook:**
+
+```tsx
+import { useOAuth } from '@uauth/react'
+
+function OAuthButtons() {
+  const { providers, isLoading, signInWithOAuth } = useOAuth()
+
+  // No OAuth configured - render nothing
+  if (providers.length === 0) return null
+
+  if (isLoading) return <div>Loading...</div>
 
   return (
     <div>
-      <h1>{user.name}</h1>
-      <p>{user.email}</p>
-      <button onClick={signOut}>Sign Out</button>
+      {providers.map((provider) => (
+        <button
+          key={provider.name}
+          onClick={() => signInWithOAuth(provider.name)}
+        >
+          Continue with {provider.displayName || provider.name}
+        </button>
+      ))}
     </div>
   )
 }
 ```
 
-## TypeScript Support
+**3. Complete login page with OAuth:**
 
-Full TypeScript support with generic user types:
+```tsx
+import { useState } from 'react'
+import { useAuth, useOAuth } from '@uauth/react'
+
+function LoginPage() {
+  const { signIn, isLoading, error } = useAuth()
+  const { providers, signInWithOAuth, isLoading: oauthLoading } = useOAuth()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await signIn('password', { email, password })
+  }
+
+  return (
+    <div>
+      {/* OAuth Buttons (only shows if providers available) */}
+      {providers.length > 0 && (
+        <>
+          <div className="oauth-buttons">
+            {providers.map((p) => (
+              <button
+                key={p.name}
+                onClick={() => signInWithOAuth(p.name)}
+                disabled={oauthLoading}
+              >
+                Continue with {p.displayName}
+              </button>
+            ))}
+          </div>
+          <div className="divider">or</div>
+        </>
+      )}
+
+      {/* Email/Password Form */}
+      <form onSubmit={handleSubmit}>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email"
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+        />
+        <button type="submit" disabled={isLoading}>
+          {isLoading ? 'Signing in...' : 'Sign In'}
+        </button>
+      </form>
+
+      {error && <div className="error">{error.message}</div>}
+    </div>
+  )
+}
+```
+
+### Protected Routes (React Router)
+
+```tsx
+import { Navigate } from 'react-router-dom'
+import { RequireAuth } from '@uauth/react'
+
+function ProtectedRoute({ children }) {
+  return (
+    <RequireAuth fallback={<Navigate to="/login" />}>
+      {children}
+    </RequireAuth>
+  )
+}
+
+// Usage in routes
+<Route path="/dashboard" element={
+  <ProtectedRoute>
+    <Dashboard />
+  </ProtectedRoute>
+} />
+```
+
+### Role-Based Access Control
+
+```tsx
+import { AuthGuard } from '@uauth/react'
+
+function AdminRoute({ children }) {
+  return (
+    <AuthGuard
+      check={(user) => user.role === 'admin'}
+      fallback={<Navigate to="/" />}
+    >
+      {children}
+    </AuthGuard>
+  )
+}
+```
+
+### Custom User Type
 
 ```tsx
 interface MyUser {
@@ -308,44 +307,159 @@ if (user) {
 </AuthGuard>
 ```
 
+---
+
+## API Reference
+
+### AuthProvider
+
+Provides authentication context to your app.
+
+```tsx
+<AuthProvider
+  auth={authInstance}
+  plugins={[]}              // Optional: plugins like OAuth2
+  loadOnMount={true}        // Optional: load session on mount (default: true)
+  autoRefresh={true}        // Optional: auto-refresh tokens before expiry (default: true)
+  refreshBeforeExpiry={60}  // Optional: seconds before expiry to refresh (default: 60)
+>
+  {children}
+</AuthProvider>
+```
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `auth` | `UniversalAuth` | Required | Auth instance from `createAuth()` |
+| `plugins` | `Plugin[]` | `[]` | Plugins to install (e.g., OAuth2) |
+| `loadOnMount` | `boolean` | `true` | Load session on mount |
+| `autoRefresh` | `boolean` | `true` | Auto-refresh tokens before expiry |
+| `refreshBeforeExpiry` | `number` | `60` | Seconds before expiry to refresh |
+
+### useAuth()
+
+Main hook for accessing auth state and methods.
+
+```tsx
+const {
+  user,             // Current user or null
+  isLoading,        // Loading state
+  isAuthenticated,  // True if user is logged in
+  error,            // Last error or null
+  signIn,           // Sign in function
+  signUp,           // Sign up function
+  signOut,          // Sign out function
+  refresh,          // Refresh tokens
+  refetch,          // Reload session
+  setUser,          // Manually set user
+  getPlugin,        // Get installed plugin by name
+  pluginsReady,     // Whether plugins are installed
+  auth,             // The auth instance
+} = useAuth()
+```
+
+### useOAuth() (requires OAuth2 plugin)
+
+Hook for OAuth authentication. Only works when `createOAuth2Plugin()` is passed to AuthProvider.
+
+```tsx
+const {
+  providers,         // Available OAuth providers
+  isLoading,         // Loading state
+  signInWithOAuth,   // Sign in with OAuth provider
+} = useOAuth()
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `providers` | `OAuth2Provider[]` | Available providers from backend |
+| `isLoading` | `boolean` | Whether providers are loading |
+| `signInWithOAuth` | `(provider: string) => Promise<void>` | Trigger OAuth flow |
+
+### RequireAuth
+
+Only renders children if user is authenticated.
+
+```tsx
+<RequireAuth
+  fallback={<LoginPage />}
+  loadingFallback={<Spinner />}
+>
+  <ProtectedContent />
+</RequireAuth>
+```
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `children` | `ReactNode` | Required | Content to show when authenticated |
+| `fallback` | `ReactNode` | `null` | Content to show when not authenticated |
+| `loadingFallback` | `ReactNode` | `null` | Content to show while loading |
+
+### GuestOnly
+
+Only renders children if user is NOT authenticated.
+
+```tsx
+<GuestOnly fallback={<Navigate to="/dashboard" />}>
+  <LoginPage />
+</GuestOnly>
+```
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `children` | `ReactNode` | Required | Content to show when not authenticated |
+| `fallback` | `ReactNode` | `null` | Content to show when authenticated |
+| `loadingFallback` | `ReactNode` | `null` | Content to show while loading |
+
+### AuthGuard
+
+Advanced guard with custom check function.
+
+```tsx
+<AuthGuard
+  check={(user) => user.role === 'admin'}
+  fallback={<AccessDenied />}
+>
+  <AdminPanel />
+</AuthGuard>
+```
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `children` | `ReactNode \| (user) => ReactNode` | Required | Content or render function |
+| `check` | `(user) => boolean` | - | Custom validation function |
+| `fallback` | `ReactNode` | `null` | Content when check fails |
+| `loadingFallback` | `ReactNode` | `null` | Content while loading |
+
+---
+
 ## Patterns
 
-### Protected Routes (React Router)
+### Auto Token Refresh
+
+By default, tokens are automatically refreshed before they expire. This happens silently in the background - no user interaction required.
 
 ```tsx
-import { Navigate } from 'react-router-dom'
-import { RequireAuth } from '@uauth/react'
+// Default: auto-refresh enabled, refreshes 60 seconds before expiry
+<AuthProvider auth={auth}>
+  <App />
+</AuthProvider>
 
-function ProtectedRoute({ children }) {
-  return (
-    <RequireAuth fallback={<Navigate to="/login" />}>
-      {children}
-    </RequireAuth>
-  )
-}
+// Customize when to refresh (e.g., 5 minutes before expiry)
+<AuthProvider auth={auth} refreshBeforeExpiry={300}>
+  <App />
+</AuthProvider>
 
-// Usage
-<Route path="/dashboard" element={
-  <ProtectedRoute>
-    <Dashboard />
-  </ProtectedRoute>
-} />
+// Disable auto-refresh (not recommended)
+<AuthProvider auth={auth} autoRefresh={false}>
+  <App />
+</AuthProvider>
 ```
 
-### Role-Based Access
-
-```tsx
-function AdminRoute({ children }) {
-  return (
-    <AuthGuard
-      check={(user) => user.role === 'admin'}
-      fallback={<Navigate to="/" />}
-    >
-      {children}
-    </AuthGuard>
-  )
-}
-```
+**How it works:**
+1. When user signs in or session loads, a timer is set based on token expiry
+2. Token is refreshed automatically before it expires
+3. On sign out, the timer is cleared
+4. If refresh fails, the next API request will trigger a 401 → automatic refresh retry
 
 ### Loading States
 
@@ -394,331 +508,47 @@ function RefreshButton() {
   const { refresh, refetch } = useAuth()
 
   const handleRefresh = async () => {
-    // Refresh tokens
-    await refresh()
-
-    // Reload user data
-    await refetch()
+    await refresh()  // Refresh tokens
+    await refetch()  // Reload user data
   }
 
   return <button onClick={handleRefresh}>Refresh Session</button>
 }
 ```
 
-## OAuth2 Authentication
-
-The React package includes full OAuth2 support with providers configured from your backend.
-
-### Setup OAuth2
+### Conditionally Enable OAuth
 
 ```tsx
-import { createAuth, createOAuth2Plugin } from '@uauth/core'
-import { AuthProvider, OAuth2Provider } from '@uauth/react'
-
-const auth = createAuth({ baseURL: 'http://localhost:8000' })
-
-// Install OAuth2 plugin
-const oauth2Plugin = createOAuth2Plugin()
-auth.plugin('oauth2', oauth2Plugin)
+// Only enable OAuth in certain environments
+const plugins = process.env.REACT_APP_ENABLE_OAUTH === 'true'
+  ? [createOAuth2Plugin()]
+  : []
 
 function App() {
   return (
-    <AuthProvider auth={auth}>
-      <OAuth2Provider auth={auth}>
-        <YourApp />
-      </OAuth2Provider>
+    <AuthProvider auth={auth} plugins={plugins}>
+      <YourApp />
     </AuthProvider>
   )
 }
 ```
 
-### OAuth2 Components
+---
 
-#### `<OAuth2Provider>`
+## Legacy OAuth2 API
 
-Provides OAuth2 context. Wrap your app with this inside `AuthProvider`.
-
-```tsx
-<OAuth2Provider
-  auth={authInstance}
-  loadOnMount={true}  // Auto-load providers from backend
->
-  {children}
-</OAuth2Provider>
-```
-
-#### `<OAuthButton>`
-
-Renders a sign-in button for a specific OAuth2 provider.
+The previous `OAuth2Provider` and `useOAuth2` APIs are still available for backwards compatibility, but we recommend using the new plugin-based approach with `useOAuth()`.
 
 ```tsx
-<OAuthButton
-  provider="google"
-  onSuccess={(data) => console.log('Signed in:', data.user)}
-  onError={(error) => console.error(error)}
-/>
+// Legacy (still works)
+import { OAuth2Provider, useOAuth2 } from '@uauth/react'
 
-// With custom children
-<OAuthButton provider="github">
-  <GitHubIcon /> Continue with GitHub
-</OAuthButton>
-
-// Use redirect flow instead of popup
-<OAuthButton provider="google" useRedirect={true} />
+// New approach (recommended)
+import { AuthProvider, useOAuth } from '@uauth/react'
+import { createOAuth2Plugin } from '@uauth/core'
 ```
 
-**Props:**
-- `provider` (required): Provider name (e.g., 'google', 'github')
-- `onSuccess`: Callback on successful sign in
-- `onError`: Callback on error
-- `useRedirect`: Use redirect flow instead of popup (default: `false`)
-- `redirectUri`: Custom redirect URI
-- `className`: CSS class for styling
-- `disabled`: Disable the button
-- `children`: Custom button content
-
-#### `<OAuthButtons>`
-
-Renders buttons for all available OAuth2 providers.
-
-```tsx
-<OAuthButtons
-  onSuccess={(data) => navigate('/dashboard')}
-  onError={(error) => setError(error.message)}
-/>
-
-// With custom styling
-<OAuthButtons
-  className="oauth-container"
-  buttonClassName="oauth-button"
-/>
-```
-
-#### `<OAuthCallback>`
-
-Handles OAuth2 callback automatically. Use on your callback page.
-
-```tsx
-// pages/auth/callback.tsx
-function CallbackPage() {
-  return (
-    <OAuthCallback
-      onSuccess={() => navigate('/dashboard')}
-      onError={(error) => navigate('/login?error=' + error.message)}
-      loadingComponent={<Spinner />}
-      errorComponent={(error) => <div>Error: {error.message}</div>}
-    >
-      <div>Success! Redirecting...</div>
-    </OAuthCallback>
-  )
-}
-```
-
-**Props:**
-- `onSuccess`: Callback on successful authentication
-- `onError`: Callback on error
-- `loadingComponent`: Show while processing (default: "Completing sign in...")
-- `errorComponent`: Function to render error state
-- `children`: Content to show on success
-
-### `useOAuth2()` Hook
-
-Access OAuth2 state and methods directly.
-
-```tsx
-const {
-  providers,         // Available OAuth2 providers
-  isLoading,         // Loading state
-  error,             // Last error
-  loadProviders,     // Manually reload providers
-  signInWithPopup,   // Sign in with popup
-  signInWithRedirect,// Sign in with redirect
-  handleCallback,    // Handle OAuth callback
-} = useOAuth2()
-```
-
-**Example: Custom OAuth UI**
-
-```tsx
-function CustomOAuthLogin() {
-  const { providers, signInWithPopup, isLoading } = useOAuth2()
-  const { refetch } = useAuth()
-
-  const handleOAuth = async (provider: string) => {
-    const result = await signInWithPopup({ provider })
-    if (result.ok) {
-      await refetch() // Refresh user state
-      navigate('/dashboard')
-    }
-  }
-
-  return (
-    <div className="oauth-options">
-      {providers.map((p) => (
-        <button
-          key={p.name}
-          onClick={() => handleOAuth(p.name)}
-          disabled={isLoading}
-        >
-          Sign in with {p.displayName}
-        </button>
-      ))}
-    </div>
-  )
-}
-```
-
-### Complete OAuth2 Login Page Example
-
-```tsx
-import { useState } from 'react'
-import { useAuth, useOAuth2, OAuthButtons } from '@uauth/react'
-
-function LoginPage() {
-  const { signIn, isLoading: authLoading, error } = useAuth()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-
-  const handlePasswordLogin = async (e) => {
-    e.preventDefault()
-    const result = await signIn('password', { email, password })
-    if (result.ok) {
-      navigate('/dashboard')
-    }
-  }
-
-  return (
-    <div className="login-page">
-      <h1>Sign In</h1>
-
-      {/* OAuth2 Buttons */}
-      <OAuthButtons
-        onSuccess={() => navigate('/dashboard')}
-        onError={(err) => alert(err.message)}
-      />
-
-      <div className="divider">or</div>
-
-      {/* Password Login */}
-      <form onSubmit={handlePasswordLogin}>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-        />
-        <button type="submit" disabled={authLoading}>
-          Sign In with Email
-        </button>
-      </form>
-
-      {error && <div className="error">{error.message}</div>}
-    </div>
-  )
-}
-```
-
-## SSR / Next.js
-
-For server-side rendering, use `@uauth/server` package.
-
-**Note:** OAuth2 flows (popup/redirect) are client-side only. For Next.js:
-- Use `OAuth2Provider` with `loadOnMount={false}` on server
-- Load providers client-side with `useEffect`
-- OAuth callback handling works normally on client
-
-```tsx
-// app/layout.tsx (Next.js App Router)
-'use client'
-
-import { AuthProvider, OAuth2Provider } from '@uauth/react'
-
-export default function RootLayout({ children }) {
-  return (
-    <AuthProvider auth={auth} loadOnMount={false}>
-      <OAuth2Provider auth={auth} loadOnMount={false}>
-        {children}
-      </OAuth2Provider>
-    </AuthProvider>
-  )
-}
-
-// app/login/page.tsx
-'use client'
-
-import { useEffect } from 'react'
-import { useOAuth2, OAuthButtons } from '@uauth/react'
-
-export default function LoginPage() {
-  const { loadProviders } = useOAuth2()
-
-  useEffect(() => {
-    loadProviders() // Load providers on client
-  }, [])
-
-  return <OAuthButtons />
-}
-```
-
-See [@uauth/server documentation](../server/README.md) for SSR details.
-
-## Examples
-
-### Complete Login/Signup Flow
-
-```tsx
-import { useState } from 'react'
-import { useAuth } from '@uauth/react'
-
-function AuthPage() {
-  const { signIn, signUp, isLoading, error } = useAuth()
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    const formData = new FormData(e.target)
-    const email = formData.get('email')
-    const password = formData.get('password')
-
-    if (mode === 'login') {
-      await signIn('password', { email, password })
-    } else {
-      const name = formData.get('name')
-      await signUp({ email, password, name })
-    }
-  }
-
-  return (
-    <div>
-      <h1>{mode === 'login' ? 'Sign In' : 'Sign Up'}</h1>
-
-      <form onSubmit={handleSubmit}>
-        {mode === 'signup' && (
-          <input name="name" placeholder="Name" required />
-        )}
-        <input name="email" type="email" placeholder="Email" required />
-        <input name="password" type="password" placeholder="Password" required />
-
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Loading...' : mode === 'login' ? 'Sign In' : 'Sign Up'}
-        </button>
-      </form>
-
-      {error && <div className="error">{error.message}</div>}
-
-      <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}>
-        {mode === 'login' ? 'Need an account?' : 'Already have an account?'}
-      </button>
-    </div>
-  )
-}
-```
+---
 
 ## License
 

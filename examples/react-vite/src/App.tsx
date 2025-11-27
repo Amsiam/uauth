@@ -1,14 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { createAuth, createOAuth2Plugin } from '@uauth/core'
 import {
   AuthProvider,
   useAuth,
+  useOAuth,
   RequireAuth,
-  OAuth2Provider,
-  useOAuth2,
-  OAuthButton,
 } from '@uauth/react'
-import type { OAuthButtonRenderProps, SignInData, OAuth2ProviderConfig } from '@uauth/react'
 import './App.css'
 
 // Create auth instance
@@ -20,9 +17,16 @@ const auth = createAuth({
   }
 })
 
-// Install OAuth2 plugin - handles popup callback automatically
-const oauth2Plugin = createOAuth2Plugin()
-auth.plugin('oauth2', oauth2Plugin)
+/**
+ * Plugins configuration
+ *
+ * Basic usage (email/password only):
+ *   const plugins: never[] = []
+ *
+ * With OAuth (optional):
+ *   const plugins = [createOAuth2Plugin()]
+ */
+const plugins = [createOAuth2Plugin()]
 
 // SVG icons for OAuth providers
 const GoogleIcon = () => (
@@ -46,59 +50,54 @@ const providerIcons: Record<string, () => JSX.Element> = {
 }
 
 function OAuthSection() {
-  const { providers, loadProviders } = useOAuth2()
+  const { providers, isLoading, signInWithOAuth } = useOAuth()
   const [oauthError, setOauthError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [signingIn, setSigningIn] = useState<string | null>(null)
 
-  useEffect(() => {
-    loadProviders().catch(() => {
-      // Providers not configured, that's okay
-    })
-  }, [loadProviders])
+  if (isLoading) {
+    return <div className="oauth-section">Loading providers...</div>
+  }
 
   if (providers.length === 0) {
     return null // No OAuth providers configured
+  }
+
+  const handleOAuthClick = async (providerName: string) => {
+    setSigningIn(providerName)
+    setOauthError(null)
+    try {
+      await signInWithOAuth(providerName)
+    } catch (err) {
+      setOauthError(err instanceof Error ? err.message : 'OAuth sign in failed')
+    } finally {
+      setSigningIn(null)
+    }
   }
 
   return (
     <div className="oauth-section">
       <p className="oauth-label">Sign in with</p>
       <div className="oauth-buttons">
-        {providers.map((provider: OAuth2ProviderConfig) => {
+        {providers.map((provider) => {
           const Icon = providerIcons[provider.name.toLowerCase()]
+          const isSigningIn = signingIn === provider.name
 
           return (
-            // Example: Using render prop for custom button UI
-            <OAuthButton
+            <button
               key={provider.name}
-              provider={provider.name}
-              onSuccess={(data: SignInData) => {
-                setSuccessMessage(`Welcome, ${data.user.name}!`)
-                setOauthError(null)
-              }}
-              onError={(error: Error) => {
-                setOauthError(error.message)
-                setSuccessMessage(null)
-              }}
+              onClick={() => handleOAuthClick(provider.name)}
+              disabled={signingIn !== null}
+              className="oauth-button"
+              aria-busy={isSigningIn}
             >
-              {({ onClick, isLoading, isDisabled, displayName }: OAuthButtonRenderProps) => (
-                <button
-                  onClick={onClick}
-                  disabled={isDisabled}
-                  className="oauth-button"
-                  aria-busy={isLoading}
-                >
-                  {Icon && <Icon />}
-                  {isLoading ? 'Signing in...' : `Continue with ${displayName}`}
-                </button>
-              )}
-            </OAuthButton>
+              {Icon && <Icon />}
+              {isSigningIn ? 'Signing in...' : `Continue with ${provider.displayName || provider.name}`}
+            </button>
           )
         })}
       </div>
-      {successMessage && <div className="success">{successMessage}</div>}
       {oauthError && <div className="error">{oauthError}</div>}
-      {providers.length > 0 && <div className="divider">or continue with email</div>}
+      <div className="divider">or continue with email</div>
     </div>
   )
 }
@@ -157,7 +156,7 @@ function SignUpForm() {
     e.preventDefault()
     const result = await signUp({ email, password, name })
 
-    if (result.ok) {
+    if (result.ok && result.data) {
       console.log('Account created!', result.data.user)
     }
   }
@@ -256,12 +255,11 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider auth={auth}>
-      <OAuth2Provider auth={auth}>
-        <div className="app">
-          <AppContent />
-        </div>
-      </OAuth2Provider>
+    // Pass plugins prop to enable OAuth - remove it for email/password only
+    <AuthProvider auth={auth} plugins={plugins}>
+      <div className="app">
+        <AppContent />
+      </div>
     </AuthProvider>
   )
 }

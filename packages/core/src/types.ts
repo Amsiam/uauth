@@ -156,6 +156,8 @@ export interface ApiClient {
     body?: any,
     options?: RequestOptions
   ): Promise<ApiResponse<T>>;
+  getTokenExpiresAt(): Promise<number | null>;
+  setTokens(tokens: AuthTokens): Promise<void>;
 }
 
 /**

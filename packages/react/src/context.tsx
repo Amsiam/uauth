@@ -5,6 +5,7 @@ import React, {
   useState,
   ReactNode,
   useCallback,
+  useRef,
 } from 'react';
 import type {
   UniversalAuth,
@@ -13,6 +14,7 @@ import type {
   SignUpPayload,
   ApiResponse,
   SessionData,
+  Plugin,
 } from '@uauth/core';
 
 export interface AuthContextValue<U extends User = User> {
@@ -29,24 +31,115 @@ export interface AuthContextValue<U extends User = User> {
   refresh: () => Promise<void>;
   refetch: () => Promise<void>;
   setUser: (user: U | null) => void;
+  /** Get an installed plugin by name */
+  getPlugin: <T extends Plugin>(name: string) => T | null;
+  /** Whether plugins are installed and ready */
+  pluginsReady: boolean;
+  /** The auth instance */
+  auth: UniversalAuth;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+// Track installed plugins
+const installedPlugins = new Map<string, Plugin>();
+
 export interface AuthProviderProps {
   auth: UniversalAuth;
   children: ReactNode;
+  /**
+   * Plugins to install (e.g., OAuth2)
+   * @example
+   * ```tsx
+   * import { createOAuth2Plugin } from '@uauth/core'
+   * <AuthProvider auth={auth} plugins={[createOAuth2Plugin()]}>
+   * ```
+   */
+  plugins?: Plugin[];
   loadOnMount?: boolean;
+  /**
+   * Enable automatic token refresh before expiry
+   * When enabled, tokens will be refreshed automatically before they expire
+   * @default true
+   */
+  autoRefresh?: boolean;
+  /**
+   * How many seconds before expiry to refresh the token
+   * @default 60 (1 minute before expiry)
+   */
+  refreshBeforeExpiry?: number;
 }
 
 export function AuthProvider<U extends User = User>({
   auth,
   children,
+  plugins = [],
   loadOnMount = true,
+  autoRefresh = true,
+  refreshBeforeExpiry = 60,
 }: AuthProviderProps) {
   const [user, setUser] = useState<U | null>(null);
   const [isLoading, setIsLoading] = useState(loadOnMount);
   const [error, setError] = useState<Error | null>(null);
+  const [pluginsReady, setPluginsReady] = useState(plugins.length === 0);
+  const pluginsInstalled = useRef(false);
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Get plugin helper
+  const getPlugin = useCallback(<T extends Plugin>(name: string): T | null => {
+    return (installedPlugins.get(name) as T) || null;
+  }, []);
+
+  // Clear any existing refresh timeout
+  const clearRefreshTimeout = useCallback(() => {
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+      refreshTimeoutRef.current = null;
+    }
+  }, []);
+
+  // Schedule auto-refresh based on token expiry time
+  const scheduleAutoRefresh = useCallback(async () => {
+    if (!autoRefresh) return;
+
+    clearRefreshTimeout();
+
+    try {
+      const expiresAt = await auth.api.getTokenExpiresAt();
+      if (!expiresAt) return;
+
+      const now = Date.now();
+      const refreshAt = expiresAt - (refreshBeforeExpiry * 1000);
+      const delay = refreshAt - now;
+
+      // Only schedule if token expires in the future
+      if (delay > 0) {
+        refreshTimeoutRef.current = setTimeout(async () => {
+          try {
+            const result = await auth.refresh();
+            if (result.ok) {
+              // Schedule next refresh after successful refresh
+              scheduleAutoRefresh();
+            }
+          } catch {
+            // Refresh failed, will be handled on next request
+          }
+        }, delay);
+      } else if (delay > -refreshBeforeExpiry * 1000) {
+        // Token is about to expire or just expired, refresh immediately
+        try {
+          const result = await auth.refresh();
+          if (result.ok) {
+            scheduleAutoRefresh();
+          }
+        } catch {
+          // Refresh failed
+        }
+      }
+    } catch {
+      // Failed to get expiry time
+    }
+  }, [auth, autoRefresh, refreshBeforeExpiry, clearRefreshTimeout]);
 
   // Load session on mount
   const loadSession = useCallback(async () => {
@@ -60,23 +153,49 @@ export function AuthProvider<U extends User = User>({
         const result = await auth.session();
         if (result.ok && result.data) {
           setUser(result.data.user as U);
+          // Schedule auto-refresh when session is loaded
+          scheduleAutoRefresh();
         } else {
           setUser(null);
+          clearRefreshTimeout();
           if (result.error) {
             setError(new Error(result.error.message));
           }
         }
       } else {
         setUser(null);
+        clearRefreshTimeout();
       }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to load session'));
       setUser(null);
+      clearRefreshTimeout();
     } finally {
       setIsLoading(false);
     }
-  }, [auth]);
+  }, [auth, scheduleAutoRefresh, clearRefreshTimeout]);
 
+  // Install plugins on mount
+  useEffect(() => {
+    const installPlugins = async () => {
+      if (!pluginsInstalled.current && plugins.length > 0) {
+        for (const plugin of plugins) {
+          if (!installedPlugins.has(plugin.name)) {
+            await auth.plugin(plugin.name, plugin);
+            installedPlugins.set(plugin.name, plugin);
+          }
+        }
+        pluginsInstalled.current = true;
+        setPluginsReady(true);
+      } else if (plugins.length === 0) {
+        setPluginsReady(true);
+      }
+    };
+
+    installPlugins();
+  }, [auth, plugins]);
+
+  // Load session on mount
   useEffect(() => {
     if (loadOnMount) {
       loadSession();
@@ -96,6 +215,8 @@ export function AuthProvider<U extends User = User>({
 
         if (result.ok && result.data) {
           setUser(result.data.user as U);
+          // Schedule auto-refresh after successful sign-in
+          scheduleAutoRefresh();
         } else if (result.error) {
           setError(new Error(result.error.message));
         }
@@ -109,7 +230,7 @@ export function AuthProvider<U extends User = User>({
         setIsLoading(false);
       }
     },
-    [auth]
+    [auth, scheduleAutoRefresh]
   );
 
   // Sign up
@@ -123,6 +244,8 @@ export function AuthProvider<U extends User = User>({
 
         if (result.ok && result.data) {
           setUser(result.data.user as U);
+          // Schedule auto-refresh after successful sign-up
+          scheduleAutoRefresh();
         } else if (result.error) {
           setError(new Error(result.error.message));
         }
@@ -136,7 +259,7 @@ export function AuthProvider<U extends User = User>({
         setIsLoading(false);
       }
     },
-    [auth]
+    [auth, scheduleAutoRefresh]
   );
 
   // Sign out
@@ -147,6 +270,8 @@ export function AuthProvider<U extends User = User>({
     try {
       await auth.signOut();
       setUser(null);
+      // Clear auto-refresh on sign out
+      clearRefreshTimeout();
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Sign out failed');
       setError(error);
@@ -154,7 +279,14 @@ export function AuthProvider<U extends User = User>({
     } finally {
       setIsLoading(false);
     }
-  }, [auth]);
+  }, [auth, clearRefreshTimeout]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      clearRefreshTimeout();
+    };
+  }, [clearRefreshTimeout]);
 
   // Refresh token
   const refresh = useCallback(async () => {
@@ -179,6 +311,9 @@ export function AuthProvider<U extends User = User>({
     refresh,
     refetch: loadSession,
     setUser: setUser as (user: U | null) => void,
+    getPlugin,
+    pluginsReady,
+    auth,
   } satisfies AuthContextValue<U>;
 
   return <AuthContext.Provider value={value as AuthContextValue}>{children}</AuthContext.Provider>;
@@ -193,3 +328,6 @@ export function useAuth<U extends User = User>(): AuthContextValue<U> {
 
   return context as unknown as AuthContextValue<U>;
 }
+
+// Re-export Plugin type for convenience
+export type { Plugin } from '@uauth/core';

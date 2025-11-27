@@ -10,9 +10,9 @@ Universal Auth SDK is a lightweight, framework-agnostic authentication library t
 ## The Problem
 
 Every auth provider ships their own SDK that only works with their backend:
-- **Clerk** → only works with Clerk
-- **Supabase** → only works with Supabase
-- **Auth0** → only works with Auth0
+- **Clerk** - only works with Clerk
+- **Supabase** - only works with Supabase
+- **Auth0** - only works with Auth0
 
 Switching backends means rewriting all your frontend auth code.
 
@@ -40,19 +40,20 @@ await auth.signOut()
 
 ### For Frontend Developers
 
-✅ **Tiny bundle** - < 3kb gzipped
-✅ **Framework integrations** - React hooks, Next.js SSR
-✅ **Auto token refresh** - Handles 401 automatically
-✅ **TypeScript** - Full type safety
-✅ **Works everywhere** - React, Next.js, React Native, Vue, Svelte
+- **Tiny bundle** - < 3kb gzipped
+- **Framework integrations** - React hooks, Next.js SSR
+- **Auto token refresh** - Handles 401 automatically
+- **TypeScript** - Full type safety
+- **Works everywhere** - React, Next.js, React Native, Vue, Svelte
+- **Plugin system** - OAuth2, magic links, 2FA (all optional)
 
 ### For Backend Developers
 
-✅ **No vendor lock-in** - Own your infrastructure
-✅ **Any database** - Postgres, MySQL, MongoDB, etc.
-✅ **Any framework** - FastAPI, Django, Express, Go, Rails
-✅ **Full control** - Implement auth your way
-✅ **Standard contract** - Just 5 required endpoints
+- **No vendor lock-in** - Own your infrastructure
+- **Any database** - Postgres, MySQL, MongoDB, etc.
+- **Any framework** - FastAPI, Django, Express, Go, Rails
+- **Full control** - Implement auth your way
+- **Standard contract** - Just 5 required endpoints
 
 ## Quick Start
 
@@ -65,6 +66,9 @@ npm install @uauth/core
 # React hooks (optional)
 npm install @uauth/react
 
+# Next.js integration (optional)
+npm install @uauth/next
+
 # Server utilities (optional)
 npm install @uauth/server
 ```
@@ -76,13 +80,13 @@ import { createAuth } from '@uauth/core'
 
 const auth = createAuth({
   baseURL: 'https://api.yourapp.com/auth',
-  storage: localStorage
+  storage: localStorage,
 })
 
 // Sign in
 const result = await auth.signIn('password', {
   email: 'alice@example.com',
-  password: 'secret123'
+  password: 'secret123',
 })
 
 if (result.ok) {
@@ -93,16 +97,19 @@ if (result.ok) {
 ### React Hooks
 
 ```tsx
+import { createAuth, createOAuth2Plugin } from '@uauth/core'
 import { AuthProvider, useAuth } from '@uauth/react'
-import { createAuth } from '@uauth/core'
 
 const auth = createAuth({
-  baseURL: 'https://api.yourapp.com/auth'
+  baseURL: 'https://api.yourapp.com/auth',
 })
+
+// Optional: Add OAuth support
+const plugins = [createOAuth2Plugin()]
 
 function App() {
   return (
-    <AuthProvider auth={auth}>
+    <AuthProvider auth={auth} plugins={plugins}>
       <YourApp />
     </AuthProvider>
   )
@@ -123,24 +130,75 @@ function Profile() {
 }
 ```
 
-### Next.js Server-Side
+### Next.js (App Router)
 
-```typescript
-import { createServerAuth, getServerSession } from '@uauth/server'
-import { cookies } from 'next/headers'
+```tsx
+// app/providers.tsx
+'use client'
 
-export default async function Page() {
-  const auth = createServerAuth({
-    baseURL: process.env.AUTH_API_URL!
-  })
+import { AuthProvider, createOAuth2Plugin } from '@uauth/next'
 
-  const session = await getServerSession(auth, cookies)
+// Optional: Add OAuth support
+const plugins = [createOAuth2Plugin()]
+
+export function Providers({ children }) {
+  return (
+    <AuthProvider plugins={plugins}>
+      {children}
+    </AuthProvider>
+  )
+}
+```
+
+```tsx
+// app/dashboard/page.tsx
+import { getSession } from '@uauth/next/server'
+import { redirect } from 'next/navigation'
+
+export default async function DashboardPage() {
+  const session = await getSession()
 
   if (!session) {
     redirect('/login')
   }
 
-  return <div>Hello {session.user.name}</div>
+  return <div>Welcome {session.user.name}</div>
+}
+```
+
+## OAuth2 (Optional)
+
+OAuth is completely optional. If you only need email/password, skip this section entirely - **no extra network requests will be made**.
+
+### Add OAuth Support
+
+```tsx
+import { createOAuth2Plugin } from '@uauth/core'
+import { AuthProvider, useOAuth } from '@uauth/react'
+
+// Add plugin to enable OAuth
+const plugins = [createOAuth2Plugin()]
+
+function App() {
+  return (
+    <AuthProvider auth={auth} plugins={plugins}>
+      <LoginPage />
+    </AuthProvider>
+  )
+}
+
+function LoginPage() {
+  const { providers, signInWithOAuth } = useOAuth()
+
+  return (
+    <div>
+      {providers.map((p) => (
+        <button key={p.name} onClick={() => signInWithOAuth(p.name)}>
+          Continue with {p.displayName}
+        </button>
+      ))}
+    </div>
+  )
 }
 ```
 
@@ -179,10 +237,10 @@ All endpoints return:
 
 We provide reference implementations:
 
-- ✅ **FastAPI** (Python) - `backends/fastapi/`
-- 🚧 **Django** (coming soon)
-- 🚧 **Express** (coming soon)
-- 🚧 **Go** (coming soon)
+- **FastAPI** (Python) - `backends/fastapi/`
+- **Django** (coming soon)
+- **Express** (coming soon)
+- **Go** (coming soon)
 
 ### Running the FastAPI Backend
 
@@ -201,19 +259,44 @@ Backend runs on `http://localhost:8000`
 |---------|-------------|------|
 | `@uauth/core` | Core SDK | < 3kb |
 | `@uauth/react` | React hooks | < 2kb |
+| `@uauth/next` | Next.js integration | < 2kb |
 | `@uauth/server` | Server utilities | < 1kb |
 
 ## Documentation
 
 - [Core SDK API](packages/core/README.md)
 - [React Hooks](packages/react/README.md)
+- [Next.js Integration](packages/next/README.md)
 - [Server Utilities](packages/server/README.md)
 - [FastAPI Backend](backends/fastapi/README.md)
-- [Full Specification](agen.md)
 
 ## Plugin System
 
-Extend the SDK with plugins:
+Extend the SDK with optional plugins:
+
+```typescript
+import { createAuth, createOAuth2Plugin } from '@uauth/core'
+import { AuthProvider } from '@uauth/react'
+
+const auth = createAuth({ baseURL: '...' })
+
+// Add only the features you need
+const plugins = [
+  createOAuth2Plugin(),  // OAuth2 support
+  // createMagicLinkPlugin(),  // Coming soon
+  // createTOTPPlugin(),       // Coming soon
+]
+
+function App() {
+  return (
+    <AuthProvider auth={auth} plugins={plugins}>
+      <YourApp />
+    </AuthProvider>
+  )
+}
+```
+
+Or create custom plugins:
 
 ```typescript
 const totpPlugin = {
@@ -226,9 +309,9 @@ const totpPlugin = {
       },
       async verify(code) {
         return client.req('/otp/verify', { code })
-      }
+      },
     }
-  }
+  },
 }
 
 auth.plugin('totp', totpPlugin)
@@ -239,11 +322,12 @@ await auth.totp.enable()
 
 | Feature | Universal Auth | NextAuth | Clerk | Supabase |
 |---------|---------------|----------|-------|----------|
-| Backend flexibility | ✅ Any | ✅ Any | ❌ Clerk only | ❌ Supabase only |
-| Data ownership | ✅ Full | ✅ Full | ❌ No | ⚠️ Partial |
+| Backend flexibility | Any | Any | Clerk only | Supabase only |
+| Data ownership | Full | Full | No | Partial |
 | Bundle size | 3kb | 50kb+ | 100kb+ | 30kb |
-| Self-hosted | ✅ Yes | ✅ Yes | ❌ No | ⚠️ Limited |
-| Plugin system | ✅ Yes | ⚠️ Limited | ❌ No | ❌ No |
+| Self-hosted | Yes | Yes | No | Limited |
+| Plugin system | Yes | Limited | No | No |
+| OAuth optional | Yes | Yes | No | No |
 
 ## Contributing
 
@@ -255,9 +339,10 @@ MIT License - see [LICENSE](LICENSE) for details
 
 ## Roadmap
 
-### Phase 1: MVP (v1.0) ✅
+### Phase 1: MVP (v1.0)
 - [x] Core SDK
 - [x] React hooks
+- [x] Next.js integration
 - [x] Server utilities
 - [x] FastAPI backend
 
@@ -275,10 +360,10 @@ MIT License - see [LICENSE](LICENSE) for details
 
 ## Support
 
-- 📖 [Documentation](docs/)
-- 🐛 [Issue Tracker](https://github.com/universal-auth/sdk/issues)
-- 💬 [Discussions](https://github.com/universal-auth/sdk/discussions)
+- [Documentation](packages/)
+- [Issue Tracker](https://github.com/universal-auth/sdk/issues)
+- [Discussions](https://github.com/universal-auth/sdk/discussions)
 
 ---
 
-**Built with ❤️ for developers who want to own their auth infrastructure**
+**Built with care for developers who want to own their auth infrastructure**

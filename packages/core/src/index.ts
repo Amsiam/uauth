@@ -17,6 +17,9 @@ export {
 } from './storage';
 export type { CookieStorageOptions } from './storage';
 
+// Shared API utilities
+export { refreshTokenRequest } from './api';
+
 // Plugins
 export { OAuth2Plugin, createOAuth2Plugin } from './plugins/oauth2';
 export type {

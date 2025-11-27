@@ -130,6 +130,17 @@ export interface AuthProviderProps {
    * Default: true
    */
   loadOnMount?: boolean
+  /**
+   * Enable automatic token refresh before expiry
+   * When enabled, tokens will be refreshed automatically before they expire
+   * @default true
+   */
+  autoRefresh?: boolean
+  /**
+   * How many seconds before expiry to refresh the token
+   * @default 60 (1 minute before expiry)
+   */
+  refreshBeforeExpiry?: number
 }
 
 /**
@@ -155,6 +166,8 @@ export function AuthProvider({
   children,
   plugins = [],
   loadOnMount = true,
+  autoRefresh = true,
+  refreshBeforeExpiry = 60,
 }: AuthProviderProps) {
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -166,6 +179,61 @@ export function AuthProvider({
   const [mounted, setMounted] = useState(false)
   const [pluginsReady, setPluginsReady] = useState(plugins.length === 0)
   const pluginsInstalled = useRef(false)
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Clear any existing refresh timeout
+  const clearRefreshTimeout = useCallback(() => {
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current)
+      refreshTimeoutRef.current = null
+    }
+  }, [])
+
+  // Schedule auto-refresh based on token expiry time
+  const scheduleAutoRefresh = useCallback(async () => {
+    if (!autoRefresh) return
+
+    const auth = getAuthInstance()
+    if (!auth) return
+
+    clearRefreshTimeout()
+
+    try {
+      const expiresAt = await auth.api.getTokenExpiresAt()
+      if (!expiresAt) return
+
+      const now = Date.now()
+      const refreshAt = expiresAt - (refreshBeforeExpiry * 1000)
+      const delay = refreshAt - now
+
+      // Only schedule if token expires in the future
+      if (delay > 0) {
+        refreshTimeoutRef.current = setTimeout(async () => {
+          try {
+            const result = await auth.refresh()
+            if (result.ok) {
+              // Schedule next refresh after successful refresh
+              scheduleAutoRefresh()
+            }
+          } catch {
+            // Refresh failed, will be handled on next request
+          }
+        }, delay)
+      } else if (delay > -refreshBeforeExpiry * 1000) {
+        // Token is about to expire or just expired, refresh immediately
+        try {
+          const result = await auth.refresh()
+          if (result.ok) {
+            scheduleAutoRefresh()
+          }
+        } catch {
+          // Refresh failed
+        }
+      }
+    } catch {
+      // Failed to get expiry time
+    }
+  }, [autoRefresh, refreshBeforeExpiry, clearRefreshTimeout])
 
   // Initialize on mount
   useEffect(() => {
@@ -201,8 +269,11 @@ export function AuthProvider({
             isAuthenticated: true,
             error: null,
           })
+          // Schedule auto-refresh when session is loaded
+          scheduleAutoRefresh()
         } else {
           setState((s) => ({ ...s, isLoading: false }))
+          clearRefreshTimeout()
         }
       } catch (err) {
         setState({
@@ -211,11 +282,17 @@ export function AuthProvider({
           isAuthenticated: false,
           error: err instanceof Error ? err : new Error('Failed to load session'),
         })
+        clearRefreshTimeout()
       }
     }
 
     init()
-  }, [loadOnMount, plugins])
+
+    // Cleanup on unmount
+    return () => {
+      clearRefreshTimeout()
+    }
+  }, [loadOnMount, plugins, scheduleAutoRefresh, clearRefreshTimeout])
 
   // Auth methods
   const signIn = useCallback(async (email: string, password: string) => {
@@ -234,6 +311,8 @@ export function AuthProvider({
           isAuthenticated: true,
           error: null,
         })
+        // Schedule auto-refresh after successful sign-in
+        scheduleAutoRefresh()
         return { ok: true }
       } else {
         const error = new Error(result.error?.message || 'Sign in failed')
@@ -245,7 +324,7 @@ export function AuthProvider({
       setState((s) => ({ ...s, isLoading: false, error }))
       return { ok: false, error }
     }
-  }, [])
+  }, [scheduleAutoRefresh])
 
   const signUp = useCallback(async (data: { email: string; password: string; name?: string }) => {
     const auth = getAuthInstance()
@@ -263,6 +342,8 @@ export function AuthProvider({
           isAuthenticated: true,
           error: null,
         })
+        // Schedule auto-refresh after successful sign-up
+        scheduleAutoRefresh()
         return { ok: true }
       } else {
         const error = new Error(result.error?.message || 'Sign up failed')
@@ -274,7 +355,7 @@ export function AuthProvider({
       setState((s) => ({ ...s, isLoading: false, error }))
       return { ok: false, error }
     }
-  }, [])
+  }, [scheduleAutoRefresh])
 
   const signOut = useCallback(async () => {
     const auth = getAuthInstance()
@@ -283,6 +364,8 @@ export function AuthProvider({
     try {
       await auth.signOut()
     } finally {
+      // Clear auto-refresh on sign out
+      clearRefreshTimeout()
       setState({
         user: null,
         isLoading: false,
@@ -290,8 +373,12 @@ export function AuthProvider({
         error: null,
       })
     }
-  }, [])
+  }, [clearRefreshTimeout])
 
+  /**
+   * Refresh the access token and reload user session
+   * This calls the /token/refresh endpoint to get new tokens
+   */
   const refreshSession = useCallback(async () => {
     const auth = getAuthInstance()
     if (!auth) return
@@ -299,10 +386,25 @@ export function AuthProvider({
     setState((s) => ({ ...s, isLoading: true }))
 
     try {
-      const result = await auth.session()
-      if (result.ok && result.data) {
+      // First, refresh the tokens
+      const refreshResult = await auth.refresh()
+
+      if (!refreshResult.ok) {
+        // Token refresh failed - user needs to re-authenticate
         setState({
-          user: result.data.user,
+          user: null,
+          isLoading: false,
+          isAuthenticated: false,
+          error: new Error(refreshResult.error?.message || 'Token refresh failed'),
+        })
+        return
+      }
+
+      // Then reload the session with new tokens
+      const sessionResult = await auth.session()
+      if (sessionResult.ok && sessionResult.data) {
+        setState({
+          user: sessionResult.data.user,
           isLoading: false,
           isAuthenticated: true,
           error: null,

@@ -3,7 +3,7 @@
  */
 
 export { ServerAuth, createServerAuth } from './server-auth';
-export type { ServerAuthConfig } from './server-auth';
+export type { ServerAuthConfig, OnTokenRefreshCallback } from './server-auth';
 
 export {
   serializeCookie,

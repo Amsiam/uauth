@@ -3,12 +3,19 @@
  */
 
 export { AuthProvider, useAuth } from './context';
-export type { AuthContextValue, AuthProviderProps } from './context';
+export type { AuthContextValue, AuthProviderProps, Plugin } from './context';
 
 export { RequireAuth, GuestOnly, AuthGuard } from './components';
 export type { RequireAuthProps, GuestOnlyProps, AuthGuardProps } from './components';
 
-// OAuth2 exports
+// OAuth hook (new plugin-based approach)
+export { useOAuth } from './useOAuth';
+export type { UseOAuthResult } from './useOAuth';
+
+// Re-export createOAuth2Plugin for convenience
+export { createOAuth2Plugin } from '@uauth/core';
+
+// Legacy OAuth2 exports (still works but prefer useOAuth with plugins)
 export {
   OAuth2Provider,
   useOAuth2,

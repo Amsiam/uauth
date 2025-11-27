@@ -85,26 +85,49 @@ import { createServerAuth } from '@uauth/server'
 
 const auth = createServerAuth({
   baseURL: 'https://api.yourapp.com/auth',
-  cookieName: 'auth_token',  // Optional: default 'auth_token'
-  fetch: customFetch         // Optional: custom fetch implementation
+  cookieName: 'auth_token',          // Optional: access token cookie name (default: 'auth_token')
+  refreshTokenCookieName: 'refresh_token',  // Optional: refresh token cookie name (default: 'refresh_token')
+  fetch: customFetch                 // Optional: custom fetch implementation
 })
 ```
 
 ### Methods
 
-#### `auth.getSession(cookieHeader)`
+#### `auth.getSession(cookieHeader, onTokenRefresh?)`
 
-Get session from a cookie header string.
+Get session from a cookie header string. Supports automatic token refresh on 401 responses.
 
 ```typescript
+// Basic usage
 const session = await auth.getSession(req.headers.cookie)
 
 if (session.ok) {
   console.log('User:', session.data.user)
 }
+
+// With auto-refresh on 401
+const session = await auth.getSession(req.headers.cookie, async (tokens) => {
+  // Called when tokens are refreshed
+  // Set new cookies or update storage
+  res.setHeader('Set-Cookie', [
+    serializeCookie('access_token', tokens.access_token, { httpOnly: true, secure: true }),
+    serializeCookie('refresh_token', tokens.refresh_token, { httpOnly: true, secure: true }),
+  ])
+})
 ```
 
+**Parameters:**
+- `cookieHeader` - The Cookie header string from the request
+- `onTokenRefresh` - Optional callback called when tokens are refreshed (for 401 auto-refresh)
+
 **Returns:** `Promise<ApiResponse<SessionData>>`
+
+**Auto-refresh behavior:**
+When `onTokenRefresh` is provided and the session request returns 401:
+1. SDK extracts refresh token from cookies
+2. Calls `/token/refresh` to get new tokens
+3. Calls `onTokenRefresh` callback with new tokens
+4. Retries session request with new access token
 
 #### `auth.getSessionFromRequest(request)`
 
@@ -134,6 +157,39 @@ if (result.ok) {
 ```
 
 **Returns:** `Promise<ApiResponse<SessionData>>`
+
+#### `auth.refreshToken(refreshToken)`
+
+Refresh access token using a refresh token.
+
+```typescript
+const result = await auth.refreshToken(refreshTokenValue)
+
+if (result.ok) {
+  console.log('New tokens:', result.data.tokens)
+  // Set new cookies with the refreshed tokens
+}
+```
+
+**Returns:** `Promise<ApiResponse<{ tokens: AuthTokens }>>`
+
+#### `auth.refreshFromCookies(cookieHeader, refreshTokenCookieName?)`
+
+Refresh token by extracting the refresh token from cookies.
+
+```typescript
+const result = await auth.refreshFromCookies(req.headers.cookie)
+
+if (result.ok) {
+  // Set new cookies with refreshed tokens
+  res.setHeader('Set-Cookie', [
+    serializeCookie('access_token', result.data.tokens.access_token, { ... }),
+    serializeCookie('refresh_token', result.data.tokens.refresh_token, { ... }),
+  ])
+}
+```
+
+**Returns:** `Promise<ApiResponse<{ tokens: AuthTokens }>>`
 
 ### Cookie Utilities
 

@@ -7,6 +7,7 @@ import type {
   StorageAdapter,
 } from './types';
 import { createStorageAdapter } from './storage';
+import { refreshTokenRequest } from './api';
 
 const STORAGE_KEYS = {
   ACCESS_TOKEN: 'access_token',
@@ -81,6 +82,18 @@ export class ApiClient {
   }
 
   /**
+   * Get token expiry timestamp (milliseconds since epoch)
+   * Returns null if no token or expiry info stored
+   */
+  async getTokenExpiresAt(): Promise<number | null> {
+    const expiresAt = await this.storage.getItem(
+      this.getStorageKey(STORAGE_KEYS.EXPIRES_AT)
+    );
+    if (!expiresAt) return null;
+    return parseInt(expiresAt, 10);
+  }
+
+  /**
    * Store authentication tokens
    */
   async setTokens(tokens: AuthTokens): Promise<void> {
@@ -138,15 +151,8 @@ export class ApiClient {
           };
         }
 
-        const response = await this.fetch(`${this.baseURL}/token/refresh`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refresh_token: refreshToken }),
-        });
-
-        const result: ApiResponse<{ tokens: AuthTokens }> = await response.json();
+        // Use shared refresh utility
+        const result = await refreshTokenRequest(this.baseURL, refreshToken, this.fetch);
 
         if (result.ok && result.data?.tokens) {
           await this.setTokens(result.data.tokens);
@@ -155,15 +161,6 @@ export class ApiClient {
         }
 
         return result;
-      } catch (error) {
-        return {
-          ok: false,
-          data: null,
-          error: {
-            code: 'REFRESH_ERROR',
-            message: error instanceof Error ? error.message : 'Token refresh failed',
-          },
-        };
       } finally {
         this.refreshPromise = null;
       }

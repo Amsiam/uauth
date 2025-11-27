@@ -378,6 +378,98 @@ const { user } = useAuth<MyUser>()
 const session = await getSession<MyUser>()
 ```
 
+### Token Refresh
+
+#### Auto-refresh (Client-side)
+
+By default, tokens are automatically refreshed before they expire. This happens silently in the background.
+
+```tsx
+// Default: auto-refresh enabled, refreshes 60 seconds before expiry
+<AuthProvider>
+  <App />
+</AuthProvider>
+
+// Customize when to refresh (e.g., 5 minutes before expiry)
+<AuthProvider refreshBeforeExpiry={300}>
+  <App />
+</AuthProvider>
+
+// Disable auto-refresh (not recommended)
+<AuthProvider autoRefresh={false}>
+  <App />
+</AuthProvider>
+```
+
+**How it works:**
+1. When user signs in or session loads, a timer is set based on token expiry
+2. Token is refreshed automatically before it expires
+3. On sign out, the timer is cleared
+4. If refresh fails, the next API request will trigger a 401 → automatic refresh retry
+
+#### Manual client-side refresh
+
+```tsx
+'use client'
+
+import { useAuth } from '@uauth/next'
+
+function RefreshButton() {
+  const { refreshSession } = useAuth()
+
+  const handleRefresh = async () => {
+    await refreshSession()
+    // Tokens are refreshed and user data is reloaded
+  }
+
+  return <button onClick={handleRefresh}>Refresh Session</button>
+}
+```
+
+#### Server-side refresh
+
+```tsx
+// app/api/refresh/route.ts
+import { refreshToken } from '@uauth/next/server'
+
+export async function POST() {
+  const result = await refreshToken()
+
+  if (!result.ok) {
+    return new Response('Token refresh failed', { status: 401 })
+  }
+
+  return Response.json({ ok: true })
+}
+```
+
+#### Auto-refresh on server
+
+`getSession()` automatically handles token refresh when it receives a 401 (unauthorized) response. If the access token is expired, it will:
+
+1. Attempt to refresh tokens using the refresh token
+2. Update the cookies with new tokens
+3. Retry the session request with the new access token
+
+This happens transparently - you just use `getSession()`:
+
+```tsx
+// app/dashboard/page.tsx
+import { getSession } from '@uauth/next/server'
+import { redirect } from 'next/navigation'
+
+export default async function DashboardPage() {
+  // Automatically refreshes tokens on 401
+  const session = await getSession()
+
+  if (!session) {
+    redirect('/login')
+  }
+
+  return <div>Welcome {session.user.name}</div>
+}
+```
+
 ---
 
 ## API Reference
@@ -390,6 +482,8 @@ const session = await getSession<MyUser>()
 |------|------|---------|-------------|
 | `plugins` | `Plugin[]` | `[]` | Plugins to install (e.g., OAuth2) |
 | `loadOnMount` | `boolean` | `true` | Load session on mount |
+| `autoRefresh` | `boolean` | `true` | Auto-refresh tokens before expiry |
+| `refreshBeforeExpiry` | `number` | `60` | Seconds before expiry to refresh |
 
 #### useAuth()
 
@@ -404,7 +498,7 @@ Returns:
 | `signIn` | `(email, password) => Promise` | Sign in |
 | `signUp` | `(data) => Promise` | Create account |
 | `signOut` | `() => Promise` | Sign out |
-| `refreshSession` | `() => Promise` | Refresh session |
+| `refreshSession` | `() => Promise` | Refresh tokens and reload session |
 | `auth` | `UniversalAuth` | SDK instance |
 | `getPlugin` | `(name) => Plugin` | Get installed plugin |
 
@@ -442,9 +536,24 @@ Render children based on auth state.
 
 #### getSession()
 
+Get the current session. Automatically refreshes tokens on 401 response.
+
 ```ts
 const session = await getSession<User>()
 // Returns: { user, accessToken } | null
+// Automatically refreshes tokens if 401 received
+```
+
+#### getSessionWithRefresh() (deprecated)
+
+> **Deprecated:** Use `getSession()` instead - it now auto-refreshes tokens on 401.
+
+```ts
+// Old way (deprecated)
+const session = await getSessionWithRefresh<User>()
+
+// New way (recommended)
+const session = await getSession<User>()
 ```
 
 #### getUser()
@@ -458,6 +567,20 @@ const user = await getUser<User>()
 
 ```ts
 const { user, isAuthenticated } = await auth<User>()
+```
+
+#### refreshToken()
+
+Manually refresh tokens on the server side.
+
+```ts
+const result = await refreshToken()
+
+if (result.ok) {
+  console.log('Tokens refreshed:', result.tokens)
+} else {
+  console.error('Refresh failed:', result.error)
+}
 ```
 
 ### Middleware (`@uauth/next/middleware`)

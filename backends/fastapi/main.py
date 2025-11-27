@@ -308,19 +308,17 @@ async def sign_out(
 @app.get("/.well-known/auth-plugin-manifest.json")
 async def plugin_manifest():
     """Return plugin manifest"""
-    enabled_providers = get_enabled_providers()
-    oauth2_enabled = len(enabled_providers) > 0
-
+    providers = get_enabled_providers()
     return {
         "version": "1.0.0",
-        "plugins": ["password"] + (["oauth2"] if oauth2_enabled else []),
+        "plugins": ["password", "oauth2"] if providers else ["password"],
+        "oauth2_providers": [p.name for p in providers],
         "features": {
             "password": True,
-            "oauth2": oauth2_enabled,
+            "oauth2": len(providers) > 0,
             "magic-link": False,
             "totp": False,
         },
-        "oauth2_providers": [p.name for p in enabled_providers] if oauth2_enabled else [],
     }
 
 
