@@ -13,7 +13,7 @@ export { useOAuth } from './useOAuth';
 export type { UseOAuthResult } from './useOAuth';
 
 // Re-export createOAuth2Plugin for convenience
-export { createOAuth2Plugin } from '@uauth/core';
+export { createOAuth2Plugin } from '@nightmar3/uauth-core';
 
 // Legacy OAuth2 exports (still works but prefer useOAuth with plugins)
 export {
@@ -42,4 +42,4 @@ export type {
   ApiResponse,
   OAuth2Provider as OAuth2ProviderConfig,
   OAuth2FlowOptions,
-} from '@uauth/core';
+} from '@nightmar3/uauth-core';

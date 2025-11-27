@@ -13,7 +13,7 @@ import type {
   SignInData,
   OAuth2Provider,
   OAuth2FlowOptions,
-} from '@uauth/core';
+} from '@nightmar3/uauth-core';
 import { useAuth } from './context';
 
 /**

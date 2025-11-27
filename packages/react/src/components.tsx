@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { useAuth } from './context';
-import type { User } from '@uauth/core';
+import type { User } from '@nightmar3/uauth-core';
 
 export interface RequireAuthProps {
   children: ReactNode;

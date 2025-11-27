@@ -1,5 +1,5 @@
 {
-  "name": "@uauth/next",
+  "name": "@nightmar3/uauth-next",
   "version": "1.0.0",
   "description": "Next.js integration for Universal Auth SDK - Zero config authentication",
   "main": "./dist/index.js",
@@ -30,6 +30,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup src/index.ts src/client.tsx src/server.ts src/middleware.ts --format cjs,esm --dts --clean --external next --external react",
     "dev": "tsup src/index.ts src/client.tsx src/server.ts src/middleware.ts --format cjs,esm --watch --external next --external react",
@@ -45,8 +48,13 @@
     "ssr",
     "oauth"
   ],
-  "author": "",
+  "author": "nightmar3",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/amsiam/@uauth.git",
+    "directory": "packages/next"
+  },
   "peerDependencies": {
     "next": "^13.0.0 || ^14.0.0 || ^15.0.0 || ^16.0.0",
     "react": "^18.0.0 || ^19.0.0"
@@ -65,8 +73,8 @@
     "vitest": "^1.0.4"
   },
   "dependencies": {
-    "@uauth/core": "file:../core",
-    "@uauth/react": "file:../react",
-    "@uauth/server": "file:../server"
+    "@nightmar3/uauth-core": "^1.0.0",
+    "@nightmar3/uauth-react": "^1.0.0",
+    "@nightmar3/uauth-server": "^1.0.0"
   }
 }

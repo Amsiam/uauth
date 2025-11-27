@@ -83,4 +83,4 @@ export type {
   AuthTokens,
   ApiResponse,
   ApiError,
-} from '@uauth/core'
+} from '@nightmar3/uauth-core'

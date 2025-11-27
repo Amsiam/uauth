@@ -1,4 +1,4 @@
-import type { User, AuthTokens } from '@uauth/core'
+import type { User, AuthTokens } from '@nightmar3/uauth-core'
 
 /**
  * Configuration for @uauth/next

@@ -15,7 +15,7 @@ import type {
   ApiResponse,
   SessionData,
   Plugin,
-} from '@uauth/core';
+} from '@nightmar3/uauth-core';
 
 export interface AuthContextValue<U extends User = User> {
   user: U | null;
@@ -330,4 +330,4 @@ export function useAuth<U extends User = User>(): AuthContextValue<U> {
 }
 
 // Re-export Plugin type for convenience
-export type { Plugin } from '@uauth/core';
+export type { Plugin } from '@nightmar3/uauth-core';

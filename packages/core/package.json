@@ -1,5 +1,5 @@
 {
-  "name": "@uauth/core",
+  "name": "@nightmar3/uauth-core",
   "version": "1.0.0",
   "description": "Universal authentication SDK that works with any backend",
   "main": "./dist/index.js",
@@ -15,6 +15,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts --clean",
     "build:dts": "tsc --emitDeclarationOnly",
@@ -28,8 +31,13 @@
     "sdk",
     "universal"
   ],
-  "author": "",
+  "author": "nightmar3",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/amsiam/@uauth.git",
+    "directory": "packages/core"
+  },
   "devDependencies": {
     "@vitest/ui": "^1.0.4",
     "jsdom": "^23.0.1",

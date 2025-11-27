@@ -18,7 +18,7 @@ import {
   type Plugin,
   type OAuth2Provider,
   OAuth2Plugin,
-} from '@uauth/core'
+} from '@nightmar3/uauth-core'
 import { getConfig, getCookieName, COOKIE_NAMES } from './config'
 import type { UAuthNextConfig, Session } from './types'
 
@@ -645,4 +645,4 @@ export function AuthGate({
 // Re-exports for convenience
 // ============================================================================
 
-export { createOAuth2Plugin, type Plugin } from '@uauth/core'
+export { createOAuth2Plugin, type Plugin } from '@nightmar3/uauth-core'

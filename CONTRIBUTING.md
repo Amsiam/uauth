@@ -15,7 +15,7 @@ Thank you for your interest in contributing to Universal Auth SDK!
 1. Fork and clone the repository:
 
 ```bash
-git clone https://github.com/amsiam/@uauth/core.git
+git clone https://github.com/amsiam/@uauth.git
 cd @uauth/core
 ```
 

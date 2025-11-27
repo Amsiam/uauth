@@ -5,7 +5,7 @@ import {
   type SessionData,
   type User,
   type AuthTokens,
-} from '@uauth/core';
+} from '@nightmar3/uauth-core';
 import { parseCookies } from './cookies';
 
 export interface ServerAuthConfig extends Omit<AuthConfig, 'storage'> {
@@ -205,8 +205,8 @@ export function createServerAuth<U extends User = User>(
   // Error if used in browser
   if (typeof window !== 'undefined') {
     throw new Error(
-      '[@uauth/server] createServerAuth() is for server-side use only. ' +
-      'For client-side authentication, use createAuth() from "@uauth/core" instead.'
+      '[@nightmar3/uauth-server] createServerAuth() is for server-side use only. ' +
+      'For client-side authentication, use createAuth() from "@nightmar3/uauth-core" instead.'
     );
   }
   return new ServerAuth<U>(config);

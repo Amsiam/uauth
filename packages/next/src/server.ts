@@ -1,8 +1,8 @@
 import { cookies } from 'next/headers'
-import { createServerAuth } from '@uauth/server'
+import { createServerAuth } from '@nightmar3/uauth-server'
 import { getConfig, getCookieName, COOKIE_NAMES } from './config'
 import type { Session, ServerAuthContext } from './types'
-import type { User, AuthTokens } from '@uauth/core'
+import type { User, AuthTokens } from '@nightmar3/uauth-core'
 
 // ============================================================================
 // Server Auth Instance
@@ -306,4 +306,4 @@ export async function getSessionWithRefresh<U = User>(): Promise<Session<U> | nu
 // Re-exports
 // ============================================================================
 
-export { createServerAuth, getServerSession as getServerSessionBase } from '@uauth/server'
+export { createServerAuth, getServerSession as getServerSessionBase } from '@nightmar3/uauth-server'

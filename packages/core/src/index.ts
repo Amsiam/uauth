@@ -70,8 +70,8 @@ export function createAuth<U extends User = User>(
   // Warn if used on server (but don't block - some SSR frameworks hydrate)
   if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
     console.warn(
-      '[@uauth/core] createAuth() is designed for client-side use. ' +
-      'For server-side authentication, use createServerAuth() from "@uauth/server" instead.'
+      '[@nightmar3/uauth-core] createAuth() is designed for client-side use. ' +
+      'For server-side authentication, use createServerAuth() from "@nightmar3/uauth-server" instead.'
     );
   }
   return new UniversalAuthSDK<U>(config);

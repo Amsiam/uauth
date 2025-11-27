@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { OAuth2Provider, OAuth2Plugin } from '@uauth/core';
+import type { OAuth2Provider, OAuth2Plugin } from '@nightmar3/uauth-core';
 import { useAuth } from './context';
 
 export interface UseOAuthResult {

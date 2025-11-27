@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, waitFor, act } from '@testing-library/react'
 import { renderHook } from '@testing-library/react'
 import { AuthProvider, useAuth } from './context'
-import type { UniversalAuth, ApiResponse, SignInData, User } from '@uauth/core'
+import type { UniversalAuth, ApiResponse, SignInData, User } from '@nightmar3/uauth-core'
 
 // Mock auth instance
 const createMockAuth = (): UniversalAuth => ({

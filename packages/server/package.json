@@ -1,5 +1,5 @@
 {
-  "name": "@uauth/server",
+  "name": "@nightmar3/uauth-server",
   "version": "1.0.0",
   "description": "Server-side utilities for Universal Auth SDK (Next.js, Node.js)",
   "main": "./dist/index.js",
@@ -15,6 +15,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts --clean",
     "dev": "tsup src/index.ts --format cjs,esm --watch",
@@ -28,10 +31,15 @@
     "server",
     "ssr"
   ],
-  "author": "",
+  "author": "nightmar3",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/amsiam/@uauth.git",
+    "directory": "packages/server"
+  },
   "peerDependencies": {
-    "@uauth/core": "^1.0.0"
+    "@nightmar3/uauth-core": "^1.0.0"
   },
   "devDependencies": {
     "@vitest/ui": "^1.0.4",
@@ -40,6 +48,6 @@
     "vitest": "^1.0.4"
   },
   "dependencies": {
-    "@uauth/core": "file:../core"
+    "@nightmar3/uauth-core": "^1.0.0"
   }
 }

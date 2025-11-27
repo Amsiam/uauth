@@ -2,7 +2,7 @@
  * Next.js specific utilities
  */
 
-import type { User, SessionData, ApiResponse } from '@uauth/core';
+import type { User, SessionData, ApiResponse } from '@nightmar3/uauth-core';
 import { ServerAuth } from './server-auth';
 
 export interface NextJSMiddlewareConfig {
