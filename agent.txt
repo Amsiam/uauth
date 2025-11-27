@@ -1,0 +1,353 @@
+# Universal Auth SDK - LLM Contribution Guide
+
+## Project Overview
+
+Universal Auth SDK is a lightweight, framework-agnostic authentication library that works with ANY backend implementing a standard REST contract. Instead of vendor lock-in, developers own their auth infrastructure.
+
+**Core Philosophy:** One tiny SDK (< 3kb) that works with all compliant backends.
+
+---
+
+## Repository Structure
+
+```
+universal-auth-sdk/
+├── packages/
+│   ├── core/           # @uauth/core - Core SDK (framework-agnostic)
+│   ├── react/          # @uauth/react - React hooks and components
+│   ├── next/           # @uauth/next - Next.js integration (App Router)
+│   └── server/         # @uauth/server - Server-side utilities
+├── backends/
+│   └── fastapi/        # Reference FastAPI backend implementation
+├── examples/
+│   ├── next-example/   # Next.js example app
+│   └── react-vite/     # React + Vite example app
+└── package.json        # Root monorepo config (npm workspaces)
+```
+
+---
+
+## Package Dependencies
+
+```
+@uauth/core (no dependencies)
+    ↓
+@uauth/server (depends on @uauth/core)
+    ↓
+@uauth/react (depends on @uauth/core)
+    ↓
+@uauth/next (depends on @uauth/core, @uauth/server, @uauth/react)
+```
+
+**Build Order:** Always build in this order: core → server → react → next
+
+---
+
+## Key Files by Package
+
+### @uauth/core (`packages/core/`)
+
+| File | Purpose |
+|------|---------|
+| `src/index.ts` | Main exports |
+| `src/client.ts` | ApiClient class - handles HTTP requests, token storage, auto-refresh |
+| `src/auth.ts` | UniversalAuth class - main SDK interface (signIn, signUp, signOut, session) |
+| `src/types.ts` | TypeScript interfaces (User, AuthTokens, ApiResponse, etc.) |
+| `src/storage.ts` | Storage adapters (localStorage, sessionStorage, memory) |
+| `src/api.ts` | Low-level utilities (refreshTokenRequest) |
+| `src/plugins/oauth2.ts` | OAuth2 plugin for social login |
+
+### @uauth/react (`packages/react/`)
+
+| File | Purpose |
+|------|---------|
+| `src/index.tsx` | Main exports |
+| `src/context.tsx` | AuthProvider, AuthContext, useAuth hook |
+| `src/components.tsx` | RequireAuth, GuestOnly, AuthGuard components |
+| `src/useOAuth.tsx` | useOAuth hook for OAuth2 plugin |
+
+### @uauth/next (`packages/next/`)
+
+| File | Purpose |
+|------|---------|
+| `src/index.ts` | Main exports (re-exports from client) |
+| `src/client.tsx` | AuthProvider with auto-refresh, useAuth, useOAuth |
+| `src/server.ts` | getSession, getUser, refreshToken (server-side) |
+| `src/middleware.ts` | authMiddleware for route protection |
+| `src/config.ts` | Configuration (baseURL, cookie names, etc.) |
+
+### @uauth/server (`packages/server/`)
+
+| File | Purpose |
+|------|---------|
+| `src/index.ts` | Main exports |
+| `src/server-auth.ts` | ServerAuth class - server-side session handling |
+| `src/cookies.ts` | Cookie utilities (parse, serialize, delete) |
+
+---
+
+## Core Concepts
+
+### 1. API Response Format
+
+ALL API calls return this envelope:
+
+```typescript
+interface ApiResponse<T> {
+  ok: boolean
+  data: T | null
+  error: { code: string; message: string } | null
+}
+```
+
+### 2. Authentication Tokens
+
+```typescript
+interface AuthTokens {
+  access_token: string
+  refresh_token: string
+  expires_in: number      // seconds until access_token expires
+  expires_at?: number     // Unix timestamp (ms) when token expires
+}
+```
+
+### 3. Token Storage Keys
+
+Tokens are stored with prefix `uauth_`:
+- `uauth_access_token`
+- `uauth_refresh_token`
+- `uauth_expires_at`
+
+### 4. Auto Token Refresh
+
+**Client-side (React/Next.js):**
+- Uses timeout-based scheduling (not polling)
+- Refreshes `refreshBeforeExpiry` seconds before token expires (default: 60s)
+- Configurable via AuthProvider props: `autoRefresh`, `refreshBeforeExpiry`
+
+**Server-side:**
+- `getSession()` accepts optional `onTokenRefresh` callback
+- On 401 response, automatically refreshes tokens and retries
+- Callback receives new tokens to update cookies
+
+### 5. Plugin System
+
+Plugins extend SDK functionality without bloating core:
+
+```typescript
+const plugin = {
+  name: 'my-plugin',
+  version: '1.0.0',
+  install({ client, core, sdk }) {
+    sdk.myMethod = async () => client.req('/my-endpoint')
+  }
+}
+```
+
+OAuth2 plugin is the main example: `createOAuth2Plugin()`
+
+---
+
+## REST Contract (Backend Must Implement)
+
+| Method | Endpoint | Request | Response |
+|--------|----------|---------|----------|
+| POST | `/sign-in/password` | `{email, password}` | `{user, tokens}` |
+| POST | `/sign-up` | `{email, password, name?}` | `{user, tokens}` |
+| POST | `/token/refresh` | `{refresh_token}` | `{tokens}` |
+| GET | `/session` | Header: `Authorization: Bearer <token>` | `{user}` |
+| DELETE | `/session` | Header: `Authorization: Bearer <token>` | `{ok: true}` |
+
+**Optional OAuth2 endpoints:**
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/oauth2/providers` | List available providers |
+| GET | `/oauth2/:provider/authorize` | Get OAuth authorization URL |
+| POST | `/oauth2/:provider/callback` | Exchange code for tokens |
+
+---
+
+## Development Commands
+
+```bash
+# Install dependencies
+npm install
+
+# Build all packages (in correct order)
+npm run build
+
+# Run tests
+npm test
+
+# Run specific package tests
+npm run test --workspace=@uauth/core
+
+# Start FastAPI backend
+cd backends/fastapi
+pip install -r requirements.txt
+uvicorn main:app --reload
+
+# Start Next.js example
+cd examples/next-example
+npm run dev
+```
+
+---
+
+## Common Tasks
+
+### Adding a New Method to Core
+
+1. Add to `packages/core/src/auth.ts` (UniversalAuth class)
+2. Add type to `packages/core/src/types.ts` if needed
+3. Export from `packages/core/src/index.ts`
+4. Rebuild: `npm run build --workspace=@uauth/core`
+
+### Adding a React Hook
+
+1. Create hook in `packages/react/src/`
+2. Export from `packages/react/src/index.tsx`
+3. Rebuild: `npm run build --workspace=@uauth/react`
+
+### Adding Server-Side Feature
+
+1. Add to `packages/server/src/server-auth.ts`
+2. Export from `packages/server/src/index.ts`
+3. Update `packages/next/src/server.ts` if needed
+4. Rebuild in order: server → next
+
+### Updating Documentation
+
+README files are in each package root:
+- `packages/core/README.md`
+- `packages/react/README.md`
+- `packages/next/README.md`
+- `packages/server/README.md`
+- `README.md` (root - project overview)
+
+---
+
+## Testing
+
+Tests use Vitest. Each package has its own test files:
+
+```
+packages/core/src/*.test.ts
+packages/react/src/*.test.tsx
+packages/next/src/*.test.ts
+packages/server/src/*.test.ts
+```
+
+Run all tests: `npm test`
+
+---
+
+## Code Patterns
+
+### Error Handling
+
+Always return ApiResponse, never throw:
+
+```typescript
+async function someMethod(): Promise<ApiResponse<Data>> {
+  try {
+    const response = await fetch(...)
+    return response.json()
+  } catch (error) {
+    return {
+      ok: false,
+      data: null,
+      error: { code: 'NETWORK_ERROR', message: error.message }
+    }
+  }
+}
+```
+
+### React Context Pattern
+
+```typescript
+// Provider sets up state
+const AuthContext = createContext<AuthContextValue | null>(null)
+
+// Hook provides access
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (!context) throw new Error('useAuth must be used within AuthProvider')
+  return context
+}
+```
+
+### Server-Side Cookie Pattern
+
+```typescript
+// Next.js server component
+const cookieStore = await cookies()
+const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ')
+const result = await serverAuth.getSession(cookieHeader, onTokenRefresh)
+```
+
+---
+
+## Important Notes for LLMs
+
+1. **Build Order Matters**: Always build packages in dependency order
+2. **TypeScript Strict**: All packages use strict TypeScript
+3. **No External Dependencies in Core**: @uauth/core has zero runtime dependencies
+4. **Cookie Names**: Default prefix is `uauth_` (configurable)
+5. **Environment Variables**:
+   - `NEXT_PUBLIC_AUTH_URL` - Client-side auth URL
+   - `AUTH_URL` - Server-side auth URL (falls back to NEXT_PUBLIC_AUTH_URL)
+
+---
+
+## Quick Reference: Key Types
+
+```typescript
+// User (extendable via generics)
+interface User {
+  id: string
+  email: string
+  name?: string
+}
+
+// Sign-in payload
+interface PasswordCredentials {
+  email: string
+  password: string
+}
+
+// Sign-up payload
+interface SignUpPayload {
+  email: string
+  password: string
+  name?: string
+  [key: string]: any
+}
+
+// Session data
+interface SessionData<U = User> {
+  user: U
+  accessToken?: string
+}
+
+// Auth provider props
+interface AuthProviderProps {
+  auth?: UniversalAuth
+  plugins?: Plugin[]
+  loadOnMount?: boolean
+  autoRefresh?: boolean        // default: true
+  refreshBeforeExpiry?: number // default: 60 (seconds)
+}
+```
+
+---
+
+## Contribution Checklist
+
+- [ ] Changes follow existing code patterns
+- [ ] Types are properly defined
+- [ ] Tests are added/updated
+- [ ] Documentation is updated
+- [ ] Build succeeds (`npm run build`)
+- [ ] Tests pass (`npm test`)
+- [ ] No breaking changes to public API (or documented if intentional)
