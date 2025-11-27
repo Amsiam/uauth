@@ -12,8 +12,10 @@ export {
   LocalStorageAdapter,
   SessionStorageAdapter,
   MemoryStorageAdapter,
+  CookieStorageAdapter,
   createStorageAdapter,
 } from './storage';
+export type { CookieStorageOptions } from './storage';
 
 // Plugins
 export { OAuth2Plugin, createOAuth2Plugin } from './plugins/oauth2';

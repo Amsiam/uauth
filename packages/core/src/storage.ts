@@ -1,6 +1,88 @@
 import type { StorageAdapter } from './types';
 
 /**
+ * Cookie storage options
+ */
+export interface CookieStorageOptions {
+  /** Cookie path (default: '/') */
+  path?: string;
+  /** Cookie domain */
+  domain?: string;
+  /** Cookie max age in seconds (default: 7 days) */
+  maxAge?: number;
+  /** Use secure flag (default: true in production) */
+  secure?: boolean;
+  /** SameSite attribute (default: 'lax') */
+  sameSite?: 'strict' | 'lax' | 'none';
+}
+
+/**
+ * Cookie storage adapter - stores tokens in browser cookies
+ * This enables server-side components to read auth tokens
+ */
+export class CookieStorageAdapter implements StorageAdapter {
+  private options: Required<CookieStorageOptions>;
+
+  constructor(options: CookieStorageOptions = {}) {
+    this.options = {
+      path: options.path ?? '/',
+      domain: options.domain ?? '',
+      maxAge: options.maxAge ?? 7 * 24 * 60 * 60, // 7 days
+      secure: options.secure ?? (typeof window !== 'undefined' && window.location.protocol === 'https:'),
+      sameSite: options.sameSite ?? 'lax',
+    };
+  }
+
+  getItem(key: string): string | null {
+    if (typeof document === 'undefined') return null;
+
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [name, ...valueParts] = cookie.trim().split('=');
+      if (name === key) {
+        return decodeURIComponent(valueParts.join('='));
+      }
+    }
+    return null;
+  }
+
+  setItem(key: string, value: string): void {
+    if (typeof document === 'undefined') return;
+
+    const { path, domain, maxAge, secure, sameSite } = this.options;
+
+    let cookieString = `${key}=${encodeURIComponent(value)}`;
+    cookieString += `; path=${path}`;
+    cookieString += `; max-age=${maxAge}`;
+    cookieString += `; samesite=${sameSite}`;
+
+    if (domain) {
+      cookieString += `; domain=${domain}`;
+    }
+
+    if (secure) {
+      cookieString += '; secure';
+    }
+
+    document.cookie = cookieString;
+  }
+
+  removeItem(key: string): void {
+    if (typeof document === 'undefined') return;
+
+    const { path, domain } = this.options;
+
+    let cookieString = `${key}=; path=${path}; max-age=0`;
+
+    if (domain) {
+      cookieString += `; domain=${domain}`;
+    }
+
+    document.cookie = cookieString;
+  }
+}
+
+/**
  * Wrapper for localStorage that matches StorageAdapter interface
  */
 export class LocalStorageAdapter implements StorageAdapter {
