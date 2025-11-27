@@ -113,7 +113,7 @@ function LoginForm() {
     const result = await signIn('password', { email, password })
 
     if (result.ok) {
-      console.log('Logged in!', result.data.user)
+      console.log('Logged in!', result.data?.user)
     }
   }
 

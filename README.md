@@ -60,19 +60,19 @@ await auth.signOut()
 
 ```bash
 # Core SDK
-npm install universal-auth-sdk
+npm install @uauth/core
 
 # React hooks (optional)
-npm install universal-auth-sdk-react
+npm install @uauth/react
 
 # Server utilities (optional)
-npm install universal-auth-sdk-server
+npm install @uauth/server
 ```
 
 ### Basic Usage
 
 ```typescript
-import { createAuth } from 'universal-auth-sdk'
+import { createAuth } from '@uauth/core'
 
 const auth = createAuth({
   baseURL: 'https://api.yourapp.com/auth',
@@ -93,8 +93,8 @@ if (result.ok) {
 ### React Hooks
 
 ```tsx
-import { AuthProvider, useAuth } from 'universal-auth-sdk-react'
-import { createAuth } from 'universal-auth-sdk'
+import { AuthProvider, useAuth } from '@uauth/react'
+import { createAuth } from '@uauth/core'
 
 const auth = createAuth({
   baseURL: 'https://api.yourapp.com/auth'
@@ -126,7 +126,7 @@ function Profile() {
 ### Next.js Server-Side
 
 ```typescript
-import { createServerAuth } from 'universal-auth-sdk-server'
+import { createServerAuth, getServerSession } from '@uauth/server'
 import { cookies } from 'next/headers'
 
 export default async function Page() {
@@ -199,9 +199,9 @@ Backend runs on `http://localhost:8000`
 
 | Package | Description | Size |
 |---------|-------------|------|
-| `universal-auth-sdk` | Core SDK | < 3kb |
-| `universal-auth-sdk-react` | React hooks | < 2kb |
-| `universal-auth-sdk-server` | Server utilities | < 1kb |
+| `@uauth/core` | Core SDK | < 3kb |
+| `@uauth/react` | React hooks | < 2kb |
+| `@uauth/server` | Server utilities | < 1kb |
 
 ## Documentation
 
@@ -262,7 +262,7 @@ MIT License - see [LICENSE](LICENSE) for details
 - [x] FastAPI backend
 
 ### Phase 2: Ecosystem (v1.1)
-- [ ] OAuth2 plugin
+- [x] OAuth2 plugin
 - [ ] Magic link plugin
 - [ ] TOTP/2FA plugin
 - [ ] Django backend

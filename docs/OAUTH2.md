@@ -78,7 +78,7 @@ ALTER TABLE users ADD COLUMN oauth_provider_user_id VARCHAR(255);
 ### 1. Install and Configure the OAuth2 Plugin
 
 ```typescript
-import { createAuth, createOAuth2Plugin } from 'universal-auth-sdk';
+import { createAuth, createOAuth2Plugin } from '@uauth/core';
 
 const auth = createAuth({
   baseURL: 'http://localhost:8000',
@@ -136,7 +136,7 @@ if (result.ok) {
 ### OAuth2 Sign In Button Component
 
 ```tsx
-import { useAuth } from '@universal-auth-sdk/react';
+import { useAuth } from '@@uauth/core/react';
 import { useState, useEffect } from 'react';
 
 function OAuthButtons() {
@@ -182,7 +182,7 @@ function OAuthButtons() {
 ```tsx
 // pages/auth/callback.tsx
 import { useEffect, useState } from 'react';
-import { useAuth } from '@universal-auth-sdk/react';
+import { useAuth } from '@@uauth/core/react';
 import { useNavigate } from 'react-router-dom';
 
 function OAuthCallback() {

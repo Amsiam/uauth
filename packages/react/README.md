@@ -1,18 +1,18 @@
-# universal-auth-sdk-react
+# @uauth/react
 
 React hooks and components for Universal Auth SDK.
 
 ## Installation
 
 ```bash
-npm install universal-auth-sdk universal-auth-sdk-react
+npm install @uauth/core @uauth/react
 ```
 
 ## Quick Start
 
 ```tsx
-import { createAuth } from 'universal-auth-sdk'
-import { AuthProvider, useAuth } from 'universal-auth-sdk-react'
+import { createAuth } from '@uauth/core'
+import { AuthProvider, useAuth } from '@uauth/react'
 
 // Create auth instance
 const auth = createAuth({
@@ -314,7 +314,7 @@ if (user) {
 
 ```tsx
 import { Navigate } from 'react-router-dom'
-import { RequireAuth } from 'universal-auth-sdk-react'
+import { RequireAuth } from '@uauth/react'
 
 function ProtectedRoute({ children }) {
   return (
@@ -412,8 +412,8 @@ The React package includes full OAuth2 support with providers configured from yo
 ### Setup OAuth2
 
 ```tsx
-import { createAuth, createOAuth2Plugin } from 'universal-auth-sdk'
-import { AuthProvider, OAuth2Provider } from 'universal-auth-sdk-react'
+import { createAuth, createOAuth2Plugin } from '@uauth/core'
+import { AuthProvider, OAuth2Provider } from '@uauth/react'
 
 const auth = createAuth({ baseURL: 'http://localhost:8000' })
 
@@ -572,7 +572,7 @@ function CustomOAuthLogin() {
 
 ```tsx
 import { useState } from 'react'
-import { useAuth, useOAuth2, OAuthButtons } from 'universal-auth-sdk-react'
+import { useAuth, useOAuth2, OAuthButtons } from '@uauth/react'
 
 function LoginPage() {
   const { signIn, isLoading: authLoading, error } = useAuth()
@@ -626,7 +626,7 @@ function LoginPage() {
 
 ## SSR / Next.js
 
-For server-side rendering, use `universal-auth-sdk-server` package.
+For server-side rendering, use `@uauth/server` package.
 
 **Note:** OAuth2 flows (popup/redirect) are client-side only. For Next.js:
 - Use `OAuth2Provider` with `loadOnMount={false}` on server
@@ -637,7 +637,7 @@ For server-side rendering, use `universal-auth-sdk-server` package.
 // app/layout.tsx (Next.js App Router)
 'use client'
 
-import { AuthProvider, OAuth2Provider } from 'universal-auth-sdk-react'
+import { AuthProvider, OAuth2Provider } from '@uauth/react'
 
 export default function RootLayout({ children }) {
   return (
@@ -653,7 +653,7 @@ export default function RootLayout({ children }) {
 'use client'
 
 import { useEffect } from 'react'
-import { useOAuth2, OAuthButtons } from 'universal-auth-sdk-react'
+import { useOAuth2, OAuthButtons } from '@uauth/react'
 
 export default function LoginPage() {
   const { loadProviders } = useOAuth2()
@@ -666,7 +666,7 @@ export default function LoginPage() {
 }
 ```
 
-See [universal-auth-sdk-server documentation](../server/README.md) for SSR details.
+See [@uauth/server documentation](../server/README.md) for SSR details.
 
 ## Examples
 
@@ -674,7 +674,7 @@ See [universal-auth-sdk-server documentation](../server/README.md) for SSR detai
 
 ```tsx
 import { useState } from 'react'
-import { useAuth } from 'universal-auth-sdk-react'
+import { useAuth } from '@uauth/react'
 
 function AuthPage() {
   const { signIn, signUp, isLoading, error } = useAuth()

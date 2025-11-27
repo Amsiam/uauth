@@ -15,8 +15,8 @@ Thank you for your interest in contributing to Universal Auth SDK!
 1. Fork and clone the repository:
 
 ```bash
-git clone https://github.com/amsiam/universal-auth-sdk.git
-cd universal-auth-sdk
+git clone https://github.com/amsiam/@uauth/core.git
+cd @uauth/core
 ```
 
 2. Install dependencies:
@@ -34,7 +34,7 @@ npm run build
 ## Project Structure
 
 ```
-universal-auth-sdk/
+@uauth/core/
 ├── packages/
 │   ├── core/           # Core SDK (TypeScript)
 │   ├── react/          # React hooks & components

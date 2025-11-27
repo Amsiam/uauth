@@ -1,11 +1,11 @@
-# universal-auth-sdk-server
+# @uauth/server
 
 Server-side utilities for Universal Auth SDK. Designed for Next.js, Node.js, and other server environments.
 
 ## Installation
 
 ```bash
-npm install universal-auth-sdk universal-auth-sdk-server
+npm install @uauth/core @uauth/server
 ```
 
 ## Quick Start
@@ -15,7 +15,7 @@ npm install universal-auth-sdk universal-auth-sdk-server
 ```typescript
 // app/dashboard/page.tsx
 import { cookies } from 'next/headers'
-import { createServerAuth, getServerSession } from 'universal-auth-sdk-server'
+import { createServerAuth, getServerSession } from '@uauth/server'
 import { redirect } from 'next/navigation'
 
 export default async function DashboardPage() {
@@ -44,7 +44,7 @@ export default async function DashboardPage() {
 // middleware.ts
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { createServerAuth } from 'universal-auth-sdk-server'
+import { createServerAuth } from '@uauth/server'
 
 const auth = createServerAuth({
   baseURL: process.env.AUTH_API_URL!
@@ -81,7 +81,7 @@ export const config = {
 Create a server-side auth client.
 
 ```typescript
-import { createServerAuth } from 'universal-auth-sdk-server'
+import { createServerAuth } from '@uauth/server'
 
 const auth = createServerAuth({
   baseURL: 'https://api.yourapp.com/auth',
@@ -142,7 +142,7 @@ if (result.ok) {
 Parse cookies from a Cookie header string.
 
 ```typescript
-import { parseCookies } from 'universal-auth-sdk-server'
+import { parseCookies } from '@uauth/server'
 
 const cookies = parseCookies(req.headers.cookie)
 console.log(cookies.auth_token)
@@ -155,7 +155,7 @@ console.log(cookies.auth_token)
 Create a cookie string with proper security settings.
 
 ```typescript
-import { serializeCookie } from 'universal-auth-sdk-server'
+import { serializeCookie } from '@uauth/server'
 
 const cookie = serializeCookie('auth_token', 'token_value', {
   httpOnly: true,
@@ -185,7 +185,7 @@ interface CookieOptions {
 Create a cookie deletion string.
 
 ```typescript
-import { deleteCookie } from 'universal-auth-sdk-server'
+import { deleteCookie } from '@uauth/server'
 
 const cookie = deleteCookie('auth_token')
 res.setHeader('Set-Cookie', cookie)
@@ -199,7 +199,7 @@ Get session in Next.js App Router server components.
 
 ```typescript
 import { cookies } from 'next/headers'
-import { getServerSession } from 'universal-auth-sdk-server'
+import { getServerSession } from '@uauth/server'
 
 const session = await getServerSession(auth, cookies)
 
@@ -215,7 +215,7 @@ if (!session) {
 Create Next.js middleware with authentication.
 
 ```typescript
-import { createAuthMiddleware, createServerAuth } from 'universal-auth-sdk-server'
+import { createAuthMiddleware, createServerAuth } from '@uauth/server'
 
 const auth = createServerAuth({
   baseURL: process.env.AUTH_API_URL!
@@ -246,7 +246,7 @@ export async function middleware(request) {
 ```typescript
 // app/api/protected/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerAuth } from 'universal-auth-sdk-server'
+import { createServerAuth } from '@uauth/server'
 
 const auth = createServerAuth({
   baseURL: process.env.AUTH_API_URL!
@@ -273,7 +273,7 @@ export async function GET(request: NextRequest) {
 
 ```typescript
 import express from 'express'
-import { createServerAuth } from 'universal-auth-sdk-server'
+import { createServerAuth } from '@uauth/server'
 
 const app = express()
 const auth = createServerAuth({
@@ -342,7 +342,7 @@ export async function POST(request: NextRequest) {
 ```typescript
 // app/profile/page.tsx
 import { cookies } from 'next/headers'
-import { createServerAuth, getServerSession } from 'universal-auth-sdk-server'
+import { createServerAuth, getServerSession } from '@uauth/server'
 import { redirect } from 'next/navigation'
 
 interface User {
@@ -378,7 +378,7 @@ export default async function ProfilePage() {
 ```typescript
 // lib/auth.ts
 import { cookies } from 'next/headers'
-import { createServerAuth, getServerSession } from 'universal-auth-sdk-server'
+import { createServerAuth, getServerSession } from '@uauth/server'
 import { redirect } from 'next/navigation'
 
 export async function requireAuth() {

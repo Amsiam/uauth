@@ -1,17 +1,17 @@
-# universal-auth-sdk
+# @uauth/core
 
 Core authentication SDK that works with any backend implementing the Universal Auth contract.
 
 ## Installation
 
 ```bash
-npm install universal-auth-sdk
+npm install @uauth/core
 ```
 
 ## Quick Start
 
 ```typescript
-import { createAuth } from 'universal-auth-sdk'
+import { createAuth } from '@uauth/core'
 
 const auth = createAuth({
   baseURL: 'https://api.yourapp.com/auth',
@@ -234,7 +234,7 @@ import {
   LocalStorageAdapter,
   SessionStorageAdapter,
   MemoryStorageAdapter
-} from 'universal-auth-sdk'
+} from '@uauth/core'
 
 // localStorage (default)
 const auth = createAuth({
@@ -402,7 +402,7 @@ Works out of the box with React Native:
 
 ```typescript
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { createAuth } from 'universal-auth-sdk'
+import { createAuth } from '@uauth/core'
 
 const auth = createAuth({
   baseURL: 'https://api.yourapp.com/auth',

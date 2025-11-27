@@ -63,14 +63,14 @@ App running at `http://localhost:5173` ✅
 ### Install
 
 ```bash
-npm install universal-auth-sdk universal-auth-sdk-react
+npm install @uauth/core @uauth/react
 ```
 
 ### Set Up (React)
 
 ```tsx
-import { createAuth } from 'universal-auth-sdk'
-import { AuthProvider, useAuth } from 'universal-auth-sdk-react'
+import { createAuth } from '@uauth/core'
+import { AuthProvider, useAuth } from '@uauth/react'
 
 // 1. Create auth instance
 const auth = createAuth({
@@ -116,12 +116,12 @@ See [Backend Guide](backends/fastapi/README.md) for details.
 ### Add to Next.js
 
 ```bash
-npm install universal-auth-sdk-server
+npm install @uauth/server
 ```
 
 ```tsx
 // middleware.ts
-import { createServerAuth } from 'universal-auth-sdk-server'
+import { createServerAuth } from '@uauth/server'
 
 export async function middleware(request) {
   const auth = createServerAuth({

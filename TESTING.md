@@ -202,7 +202,7 @@ describe('UniversalAuthSDK', () => {
 
 ```typescript
 import { render, screen } from '@testing-library/react'
-import { AuthProvider, RequireAuth } from 'universal-auth-sdk-react'
+import { AuthProvider, RequireAuth } from '@uauth/react'
 
 it('should render protected content when authenticated', () => {
   const mockAuth = createMockAuth()
