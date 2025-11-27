@@ -1,6 +1,6 @@
 {
   "name": "@nightmar3/uauth-react",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "React hooks and components for Universal Auth SDK",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
