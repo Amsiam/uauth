@@ -1,14 +1,21 @@
 'use client'
 
-import { AuthProvider } from '@uauth/next'
+import { AuthProvider, createOAuth2Plugin } from '@uauth/next'
+
+// Create plugins once outside component to avoid re-creation
+const plugins = [createOAuth2Plugin()]
 
 /**
  * App providers wrapper
  *
  * With @uauth/next, you just need to wrap your app with AuthProvider.
- * Everything else (OAuth2, cookie storage, SSR safety) is handled automatically.
+ * Pass plugins for additional features like OAuth2.
  */
 export function Providers({ children }: { children: React.ReactNode }) {
-  // Cast to any to avoid React 18/19 type mismatch
-  return <AuthProvider>{children as any}</AuthProvider>
+  return (
+    <AuthProvider plugins={plugins}>
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+      {children as any}
+    </AuthProvider>
+  )
 }

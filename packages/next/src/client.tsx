@@ -7,17 +7,17 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
   type ReactNode,
 } from 'react'
 import {
   createAuth,
-  createOAuth2Plugin,
   CookieStorageAdapter,
   type UniversalAuth,
   type User,
+  type Plugin,
   type OAuth2Provider,
-  type SignUpPayload,
-  type PasswordSignInPayload,
+  OAuth2Plugin,
 } from '@uauth/core'
 import { getConfig, getCookieName, COOKIE_NAMES } from './config'
 import type { UAuthNextConfig, Session } from './types'
@@ -27,7 +27,7 @@ import type { UAuthNextConfig, Session } from './types'
 // ============================================================================
 
 let authInstance: UniversalAuth | null = null
-let oauth2Plugin: ReturnType<typeof createOAuth2Plugin> | null = null
+let installedPlugins: Map<string, Plugin> = new Map()
 
 /**
  * Get or create the auth instance (lazy initialization for SSR safety)
@@ -56,22 +56,31 @@ function getAuthInstance(): UniversalAuth | null {
       onTokenRefresh: config.onTokenRefresh,
       onAuthError: config.onAuthError ? (err) => config.onAuthError!(new Error(err.message)) : undefined,
     })
-
-    // Auto-install OAuth2 plugin
-    oauth2Plugin = createOAuth2Plugin()
-    authInstance.plugin('oauth2', oauth2Plugin)
   }
 
   return authInstance
 }
 
 /**
- * Get the OAuth2 plugin instance
+ * Install plugins on the auth instance
  */
-function getOAuth2Plugin() {
-  // Ensure auth instance is created first
-  getAuthInstance()
-  return oauth2Plugin
+async function installPlugins(plugins: Plugin[]): Promise<void> {
+  const auth = getAuthInstance()
+  if (!auth) return
+
+  for (const plugin of plugins) {
+    if (!installedPlugins.has(plugin.name)) {
+      await auth.plugin(plugin.name, plugin)
+      installedPlugins.set(plugin.name, plugin)
+    }
+  }
+}
+
+/**
+ * Get an installed plugin by name
+ */
+function getPlugin<T extends Plugin>(name: string): T | null {
+  return (installedPlugins.get(name) as T) || null
 }
 
 // ============================================================================
@@ -92,13 +101,10 @@ interface AuthContextValue<U = User> extends AuthState<U> {
   signOut: () => Promise<void>
   refreshSession: () => Promise<void>
 
-  // OAuth methods
-  oauthProviders: OAuth2Provider[]
-  oauthLoading: boolean
-  signInWithOAuth: (provider: string) => Promise<void>
-
   // Low-level access
   auth: UniversalAuth | null
+  getPlugin: <T extends Plugin>(name: string) => T | null
+  pluginsReady: boolean
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -110,9 +116,15 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export interface AuthProviderProps {
   children: ReactNode
   /**
-   * Optional config overrides
+   * Plugins to install (e.g., OAuth2, MagicLink)
+   * @example
+   * ```tsx
+   * import { createOAuth2Plugin } from '@uauth/core'
+   *
+   * <AuthProvider plugins={[createOAuth2Plugin()]}>
+   * ```
    */
-  config?: UAuthNextConfig
+  plugins?: Plugin[]
   /**
    * Load session on mount
    * Default: true
@@ -141,7 +153,7 @@ export interface AuthProviderProps {
  */
 export function AuthProvider({
   children,
-  config,
+  plugins = [],
   loadOnMount = true,
 }: AuthProviderProps) {
   const [state, setState] = useState<AuthState>({
@@ -151,22 +163,30 @@ export function AuthProvider({
     error: null,
   })
 
-  const [oauthProviders, setOauthProviders] = useState<OAuth2Provider[]>([])
-  const [oauthLoading, setOauthLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [pluginsReady, setPluginsReady] = useState(plugins.length === 0)
+  const pluginsInstalled = useRef(false)
 
   // Initialize on mount
   useEffect(() => {
     setMounted(true)
 
-    if (!loadOnMount) {
-      setState((s) => ({ ...s, isLoading: false }))
-      return
-    }
-
     const init = async () => {
       const auth = getAuthInstance()
       if (!auth) {
+        setState((s) => ({ ...s, isLoading: false }))
+        setPluginsReady(true)
+        return
+      }
+
+      // Install plugins once
+      if (!pluginsInstalled.current && plugins.length > 0) {
+        await installPlugins(plugins)
+        pluginsInstalled.current = true
+        setPluginsReady(true)
+      }
+
+      if (!loadOnMount) {
         setState((s) => ({ ...s, isLoading: false }))
         return
       }
@@ -184,20 +204,6 @@ export function AuthProvider({
         } else {
           setState((s) => ({ ...s, isLoading: false }))
         }
-
-        // Load OAuth providers (non-blocking)
-        const plugin = getOAuth2Plugin()
-        if (plugin) {
-          setOauthLoading(true)
-          try {
-            const providers = await plugin.loadProviders()
-            setOauthProviders(providers)
-          } catch {
-            // OAuth not configured - that's ok
-          } finally {
-            setOauthLoading(false)
-          }
-        }
       } catch (err) {
         setState({
           user: null,
@@ -209,7 +215,7 @@ export function AuthProvider({
     }
 
     init()
-  }, [loadOnMount])
+  }, [loadOnMount, plugins])
 
   // Auth methods
   const signIn = useCallback(async (email: string, password: string) => {
@@ -319,38 +325,16 @@ export function AuthProvider({
     }
   }, [])
 
-  const signInWithOAuth = useCallback(async (provider: string) => {
-    const plugin = getOAuth2Plugin()
-    if (!plugin) {
-      throw new Error('OAuth2 not initialized')
-    }
-
-    // Use popup flow
-    const result = await plugin.signInWithPopup({ provider })
-
-    if (result.ok && result.data) {
-      setState({
-        user: result.data.user,
-        isLoading: false,
-        isAuthenticated: true,
-        error: null,
-      })
-    } else {
-      throw new Error(result.error?.message || 'OAuth sign in failed')
-    }
-  }, [])
-
   const value = useMemo<AuthContextValue>(() => ({
     ...state,
     signIn,
     signUp,
     signOut,
     refreshSession,
-    oauthProviders,
-    oauthLoading,
-    signInWithOAuth,
     auth: getAuthInstance(),
-  }), [state, signIn, signUp, signOut, refreshSession, oauthProviders, oauthLoading, signInWithOAuth])
+    getPlugin,
+    pluginsReady,
+  }), [state, signIn, signUp, signOut, refreshSession, pluginsReady])
 
   // Don't render provider until mounted (SSR safety)
   if (!mounted) {
@@ -378,10 +362,9 @@ const defaultContextValue: AuthContextValue = {
   signUp: async () => ({ ok: false, error: new Error('Auth not initialized') }),
   signOut: async () => {},
   refreshSession: async () => {},
-  oauthProviders: [],
-  oauthLoading: false,
-  signInWithOAuth: async () => { throw new Error('Auth not initialized') },
   auth: null,
+  getPlugin: () => null,
+  pluginsReady: false,
 }
 
 /**
@@ -451,6 +434,69 @@ export function useSession<U = User>(): Session<U> | null {
 }
 
 // ============================================================================
+// OAuth Hook (optional - only works when OAuth2 plugin is installed)
+// ============================================================================
+
+interface UseOAuthResult {
+  providers: OAuth2Provider[]
+  isLoading: boolean
+  signInWithOAuth: (provider: string) => Promise<void>
+}
+
+/**
+ * Hook for OAuth authentication
+ * Only works when OAuth2 plugin is installed via AuthProvider's plugins prop
+ *
+ * @example
+ * ```tsx
+ * // First, install the plugin in your provider
+ * <AuthProvider plugins={[createOAuth2Plugin()]}>
+ *
+ * // Then use the hook
+ * const { providers, signInWithOAuth } = useOAuth()
+ * ```
+ */
+export function useOAuth(): UseOAuthResult {
+  const { getPlugin, pluginsReady } = useAuth()
+  const [providers, setProviders] = useState<OAuth2Provider[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    // Wait for plugins to be installed
+    if (!pluginsReady) return
+
+    const loadProviders = async () => {
+      const plugin = getPlugin<OAuth2Plugin>('oauth2')
+      if (plugin) {
+        try {
+          const loadedProviders = await plugin.loadProviders()
+          setProviders(loadedProviders)
+        } catch {
+          // OAuth not configured on backend
+        }
+      }
+      setIsLoading(false)
+    }
+
+    loadProviders()
+  }, [getPlugin, pluginsReady])
+
+  const signInWithOAuth = useCallback(async (provider: string) => {
+    const plugin = getPlugin<OAuth2Plugin>('oauth2')
+    if (!plugin) {
+      throw new Error('OAuth2 plugin not installed. Add createOAuth2Plugin() to AuthProvider plugins.')
+    }
+
+    const result = await plugin.signInWithPopup({ provider })
+    if (!result.ok) {
+      throw new Error(result.error?.message || 'OAuth sign in failed')
+    }
+  }, [getPlugin])
+
+  return { providers, isLoading, signInWithOAuth }
+}
+
+// ============================================================================
 // Utility Components
 // ============================================================================
 
@@ -494,13 +540,7 @@ export function AuthGate({
 }
 
 // ============================================================================
-// Re-exports from @uauth/react for convenience
+// Re-exports for convenience
 // ============================================================================
 
-export {
-  OAuthButton,
-  OAuthButtons,
-  type OAuthButtonProps,
-  type OAuthButtonsProps,
-  type OAuthButtonRenderProps,
-} from '@uauth/react'
+export { createOAuth2Plugin, type Plugin } from '@uauth/core'

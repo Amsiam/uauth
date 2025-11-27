@@ -37,6 +37,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
+**With OAuth (optional):** If you need OAuth authentication, pass plugins:
+
+```tsx
+import { AuthProvider, createOAuth2Plugin } from '@uauth/next'
+
+const plugins = [createOAuth2Plugin()]
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <AuthProvider plugins={plugins}>{children}</AuthProvider>
+      </body>
+    </html>
+  )
+}
+```
+
 ### Step 4: Create Login Page
 
 ```tsx
@@ -165,24 +183,36 @@ That's it! Your Next.js app now has full authentication support.
 
 ### Email/Password Authentication
 
+#### Sign In
+
 ```tsx
 'use client'
 
 import { useAuth } from '@uauth/next'
 
-function AuthForm() {
-  const { signIn, signUp } = useAuth()
+function LoginForm() {
+  const { signIn } = useAuth()
 
-  // Sign in existing user
-  const handleSignIn = async (email: string, password: string) => {
+  const handleSubmit = async (email: string, password: string) => {
     const result = await signIn(email, password)
     if (!result.ok) {
       console.error(result.error?.message)
     }
   }
+}
+```
 
-  // Create new account
-  const handleSignUp = async (email: string, password: string, name: string) => {
+#### Sign Up
+
+```tsx
+'use client'
+
+import { useAuth } from '@uauth/next'
+
+function SignUpForm() {
+  const { signUp } = useAuth()
+
+  const handleSubmit = async (email: string, password: string, name: string) => {
     const result = await signUp({ email, password, name })
     if (!result.ok) {
       console.error(result.error?.message)
@@ -191,21 +221,45 @@ function AuthForm() {
 }
 ```
 
-### OAuth Authentication
+### OAuth Authentication (Optional)
+
+OAuth is completely optional. If you don't need OAuth, skip this section entirely - no extra network requests will be made.
+
+**No OAuth? No problem.** Just use `signIn` and `signUp` for email/password authentication.
+
+To add OAuth support:
+
+1. **Add the OAuth2 plugin to your provider:**
+
+```tsx
+// app/layout.tsx or components/providers.tsx
+import { AuthProvider, createOAuth2Plugin } from '@uauth/next'
+
+const plugins = [createOAuth2Plugin()]
+
+export function Providers({ children }) {
+  return <AuthProvider plugins={plugins}>{children}</AuthProvider>
+}
+```
+
+2. **Use the `useOAuth` hook in your login page:**
 
 ```tsx
 'use client'
 
-import { useAuth } from '@uauth/next'
+import { useOAuth } from '@uauth/next'
 
 function OAuthLogin() {
-  const { oauthProviders, oauthLoading, signInWithOAuth } = useAuth()
+  const { providers, isLoading, signInWithOAuth } = useOAuth()
 
-  if (oauthLoading) return <div>Loading...</div>
+  // No OAuth configured on backend - don't render anything
+  if (providers.length === 0) return null
+
+  if (isLoading) return <div>Loading...</div>
 
   return (
     <div>
-      {oauthProviders.map((provider) => (
+      {providers.map((provider) => (
         <button
           key={provider.name}
           onClick={() => signInWithOAuth(provider.name)}
@@ -218,7 +272,7 @@ function OAuthLogin() {
 }
 ```
 
-For OAuth, create a callback page:
+3. **Create a callback page for OAuth redirects:**
 
 ```tsx
 // app/auth/callback/page.tsx
@@ -334,8 +388,8 @@ const session = await getSession<MyUser>()
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
+| `plugins` | `Plugin[]` | `[]` | Plugins to install (e.g., OAuth2) |
 | `loadOnMount` | `boolean` | `true` | Load session on mount |
-| `config` | `object` | - | Optional config overrides |
 
 #### useAuth()
 
@@ -351,10 +405,18 @@ Returns:
 | `signUp` | `(data) => Promise` | Create account |
 | `signOut` | `() => Promise` | Sign out |
 | `refreshSession` | `() => Promise` | Refresh session |
-| `oauthProviders` | `OAuth2Provider[]` | Available providers |
-| `oauthLoading` | `boolean` | Providers loading |
-| `signInWithOAuth` | `(provider) => Promise` | OAuth sign in |
 | `auth` | `UniversalAuth` | SDK instance |
+| `getPlugin` | `(name) => Plugin` | Get installed plugin |
+
+#### useOAuth() (requires OAuth2 plugin)
+
+Returns:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `providers` | `OAuth2Provider[]` | Available OAuth providers |
+| `isLoading` | `boolean` | Providers loading state |
+| `signInWithOAuth` | `(provider) => Promise` | Sign in with OAuth |
 
 #### useUser()
 

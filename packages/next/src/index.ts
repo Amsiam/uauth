@@ -68,15 +68,13 @@ export {
   useAuth,
   useUser,
   useSession,
+  useOAuth,
   SignedIn,
   SignedOut,
   AuthGate,
-  OAuthButton,
-  OAuthButtons,
+  createOAuth2Plugin,
   type AuthProviderProps,
-  type OAuthButtonProps,
-  type OAuthButtonsProps,
-  type OAuthButtonRenderProps,
+  type Plugin,
 } from './client'
 
 // Re-export core types for convenience
@@ -85,5 +83,4 @@ export type {
   AuthTokens,
   ApiResponse,
   ApiError,
-  OAuth2Provider,
 } from '@uauth/core'

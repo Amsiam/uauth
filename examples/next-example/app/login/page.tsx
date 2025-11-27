@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@uauth/next'
+import { useAuth, useOAuth } from '@uauth/next'
 
 // Force dynamic rendering to avoid SSG issues with auth
 export const dynamic = 'force-dynamic'
@@ -39,16 +39,8 @@ function LoadingSpinner() {
 
 export default function LoginPage() {
   const router = useRouter()
-  const {
-    user,
-    isLoading,
-    signIn,
-    signUp,
-    oauthProviders,
-    oauthLoading,
-    signInWithOAuth,
-    error: authError,
-  } = useAuth()
+  const { user, isLoading, signIn, signUp, error: authError } = useAuth()
+  const { providers: oauthProviders, isLoading: oauthLoading, signInWithOAuth } = useOAuth()
 
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
