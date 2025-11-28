@@ -1,4 +1,4 @@
-# @uauth/core
+# @nightmar3/uauth-core
 
 Core authentication SDK that works with any backend implementing the Universal Auth contract.
 
@@ -7,13 +7,13 @@ Core authentication SDK that works with any backend implementing the Universal A
 ### Step 1: Install the Package
 
 ```bash
-npm install @uauth/core
+npm install @nightmar3/uauth-core
 ```
 
 ### Step 2: Create Auth Instance
 
 ```typescript
-import { createAuth } from '@uauth/core'
+import { createAuth } from '@nightmar3/uauth-core'
 
 const auth = createAuth({
   baseURL: 'https://api.yourapp.com/auth',
@@ -83,7 +83,7 @@ To add OAuth support:
 **1. Install the OAuth2 plugin:**
 
 ```typescript
-import { createAuth, createOAuth2Plugin } from '@uauth/core'
+import { createAuth, createOAuth2Plugin } from '@nightmar3/uauth-core'
 
 const auth = createAuth({
   baseURL: 'https://api.yourapp.com/auth',
@@ -133,11 +133,11 @@ if (result.ok) {
 
 ### React/Next.js Usage
 
-When using with `@uauth/react` or `@uauth/next`, pass plugins to the AuthProvider:
+When using with `@nightmar3/uauth-react` or `@nightmar3/uauth-next`, pass plugins to the AuthProvider:
 
 ```tsx
-import { createAuth, createOAuth2Plugin } from '@uauth/core'
-import { AuthProvider, useOAuth } from '@uauth/react'
+import { createAuth, createOAuth2Plugin } from '@nightmar3/uauth-core'
+import { AuthProvider, useOAuth } from '@nightmar3/uauth-react'
 
 const auth = createAuth({ baseURL: '...' })
 const plugins = [createOAuth2Plugin()]
@@ -348,7 +348,7 @@ await auth.plugin('oauth2', createOAuth2Plugin())
 Low-level utility to make a token refresh request. This is used internally by `auth.refresh()` but is exported for advanced use cases (e.g., server-side refresh).
 
 ```typescript
-import { refreshTokenRequest } from '@uauth/core'
+import { refreshTokenRequest } from '@nightmar3/uauth-core'
 
 const result = await refreshTokenRequest(
   'https://api.yourapp.com/auth',
@@ -376,7 +376,7 @@ if (result.ok) {
 Create the OAuth2 plugin.
 
 ```typescript
-import { createOAuth2Plugin } from '@uauth/core'
+import { createOAuth2Plugin } from '@nightmar3/uauth-core'
 
 const oauth2Plugin = createOAuth2Plugin()
 await auth.plugin('oauth2', oauth2Plugin)
@@ -534,7 +534,7 @@ import {
   LocalStorageAdapter,
   SessionStorageAdapter,
   MemoryStorageAdapter,
-} from '@uauth/core'
+} from '@nightmar3/uauth-core'
 
 // localStorage (default)
 const auth = createAuth({
@@ -631,7 +631,7 @@ Works out of the box with React Native:
 
 ```typescript
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { createAuth } from '@uauth/core'
+import { createAuth } from '@nightmar3/uauth-core'
 
 const auth = createAuth({
   baseURL: 'https://api.yourapp.com/auth',

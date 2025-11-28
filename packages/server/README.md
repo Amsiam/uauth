@@ -1,11 +1,11 @@
-# @uauth/server
+# @nightmar3/uauth-server
 
 Server-side utilities for Universal Auth SDK. Designed for Next.js, Node.js, and other server environments.
 
 ## Installation
 
 ```bash
-npm install @uauth/core @uauth/server
+npm install @nightmar3/uauth-core @nightmar3/uauth-server
 ```
 
 ## Quick Start
@@ -15,7 +15,7 @@ npm install @uauth/core @uauth/server
 ```typescript
 // app/dashboard/page.tsx
 import { cookies } from 'next/headers'
-import { createServerAuth, getServerSession } from '@uauth/server'
+import { createServerAuth, getServerSession } from '@nightmar3/uauth-server'
 import { redirect } from 'next/navigation'
 
 export default async function DashboardPage() {
@@ -44,7 +44,7 @@ export default async function DashboardPage() {
 // middleware.ts
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { createServerAuth } from '@uauth/server'
+import { createServerAuth } from '@nightmar3/uauth-server'
 
 const auth = createServerAuth({
   baseURL: process.env.AUTH_API_URL!
@@ -81,7 +81,7 @@ export const config = {
 Create a server-side auth client.
 
 ```typescript
-import { createServerAuth } from '@uauth/server'
+import { createServerAuth } from '@nightmar3/uauth-server'
 
 const auth = createServerAuth({
   baseURL: 'https://api.yourapp.com/auth',
@@ -198,7 +198,7 @@ if (result.ok) {
 Parse cookies from a Cookie header string.
 
 ```typescript
-import { parseCookies } from '@uauth/server'
+import { parseCookies } from '@nightmar3/uauth-server'
 
 const cookies = parseCookies(req.headers.cookie)
 console.log(cookies.auth_token)
@@ -211,7 +211,7 @@ console.log(cookies.auth_token)
 Create a cookie string with proper security settings.
 
 ```typescript
-import { serializeCookie } from '@uauth/server'
+import { serializeCookie } from '@nightmar3/uauth-server'
 
 const cookie = serializeCookie('auth_token', 'token_value', {
   httpOnly: true,
@@ -241,7 +241,7 @@ interface CookieOptions {
 Create a cookie deletion string.
 
 ```typescript
-import { deleteCookie } from '@uauth/server'
+import { deleteCookie } from '@nightmar3/uauth-server'
 
 const cookie = deleteCookie('auth_token')
 res.setHeader('Set-Cookie', cookie)
@@ -255,7 +255,7 @@ Get session in Next.js App Router server components.
 
 ```typescript
 import { cookies } from 'next/headers'
-import { getServerSession } from '@uauth/server'
+import { getServerSession } from '@nightmar3/uauth-server'
 
 const session = await getServerSession(auth, cookies)
 
@@ -271,7 +271,7 @@ if (!session) {
 Create Next.js middleware with authentication.
 
 ```typescript
-import { createAuthMiddleware, createServerAuth } from '@uauth/server'
+import { createAuthMiddleware, createServerAuth } from '@nightmar3/uauth-server'
 
 const auth = createServerAuth({
   baseURL: process.env.AUTH_API_URL!
@@ -302,7 +302,7 @@ export async function middleware(request) {
 ```typescript
 // app/api/protected/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerAuth } from '@uauth/server'
+import { createServerAuth } from '@nightmar3/uauth-server'
 
 const auth = createServerAuth({
   baseURL: process.env.AUTH_API_URL!
@@ -329,7 +329,7 @@ export async function GET(request: NextRequest) {
 
 ```typescript
 import express from 'express'
-import { createServerAuth } from '@uauth/server'
+import { createServerAuth } from '@nightmar3/uauth-server'
 
 const app = express()
 const auth = createServerAuth({
@@ -398,7 +398,7 @@ export async function POST(request: NextRequest) {
 ```typescript
 // app/profile/page.tsx
 import { cookies } from 'next/headers'
-import { createServerAuth, getServerSession } from '@uauth/server'
+import { createServerAuth, getServerSession } from '@nightmar3/uauth-server'
 import { redirect } from 'next/navigation'
 
 interface User {
@@ -434,7 +434,7 @@ export default async function ProfilePage() {
 ```typescript
 // lib/auth.ts
 import { cookies } from 'next/headers'
-import { createServerAuth, getServerSession } from '@uauth/server'
+import { createServerAuth, getServerSession } from '@nightmar3/uauth-server'
 import { redirect } from 'next/navigation'
 
 export async function requireAuth() {

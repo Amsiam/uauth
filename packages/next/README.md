@@ -1,4 +1,4 @@
-# @uauth/next
+# @nightmar3/uauth-next
 
 Next.js integration for Universal Auth SDK. Provides seamless authentication with minimal setup.
 
@@ -7,7 +7,7 @@ Next.js integration for Universal Auth SDK. Provides seamless authentication wit
 ### Step 1: Install the Package
 
 ```bash
-npm install @uauth/next
+npm install @nightmar3/uauth-next
 ```
 
 ### Step 2: Set Environment Variable
@@ -24,7 +24,7 @@ Wrap your application with the `AuthProvider`:
 
 ```tsx
 // app/layout.tsx
-import { AuthProvider } from '@uauth/next'
+import { AuthProvider } from '@nightmar3/uauth-next'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -40,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 **With OAuth (optional):** If you need OAuth authentication, pass plugins:
 
 ```tsx
-import { AuthProvider, createOAuth2Plugin } from '@uauth/next'
+import { AuthProvider, createOAuth2Plugin } from '@nightmar3/uauth-next'
 
 const plugins = [createOAuth2Plugin()]
 
@@ -63,7 +63,7 @@ export default function RootLayout({ children }) {
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@uauth/next'
+import { useAuth } from '@nightmar3/uauth-next'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -118,7 +118,7 @@ export default function LoginPage() {
 
 ```tsx
 // app/dashboard/page.tsx
-import { getSession } from '@uauth/next/server'
+import { getSession } from '@nightmar3/uauth-next/server'
 import { redirect } from 'next/navigation'
 
 export default async function DashboardPage() {
@@ -144,7 +144,7 @@ export default async function DashboardPage() {
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@uauth/next'
+import { useAuth } from '@nightmar3/uauth-next'
 
 export function SignOutButton() {
   const router = useRouter()
@@ -163,7 +163,7 @@ export function SignOutButton() {
 
 ```ts
 // middleware.ts
-import { authMiddleware } from '@uauth/next/middleware'
+import { authMiddleware } from '@nightmar3/uauth-next/middleware'
 
 export default authMiddleware({
   protectedRoutes: ['/dashboard', '/dashboard/**', '/settings/**'],
@@ -188,7 +188,7 @@ That's it! Your Next.js app now has full authentication support.
 ```tsx
 'use client'
 
-import { useAuth } from '@uauth/next'
+import { useAuth } from '@nightmar3/uauth-next'
 
 function LoginForm() {
   const { signIn } = useAuth()
@@ -207,7 +207,7 @@ function LoginForm() {
 ```tsx
 'use client'
 
-import { useAuth } from '@uauth/next'
+import { useAuth } from '@nightmar3/uauth-next'
 
 function SignUpForm() {
   const { signUp } = useAuth()
@@ -233,7 +233,7 @@ To add OAuth support:
 
 ```tsx
 // app/layout.tsx or components/providers.tsx
-import { AuthProvider, createOAuth2Plugin } from '@uauth/next'
+import { AuthProvider, createOAuth2Plugin } from '@nightmar3/uauth-next'
 
 const plugins = [createOAuth2Plugin()]
 
@@ -247,7 +247,7 @@ export function Providers({ children }) {
 ```tsx
 'use client'
 
-import { useOAuth } from '@uauth/next'
+import { useOAuth } from '@nightmar3/uauth-next'
 
 function OAuthLogin() {
   const { providers, isLoading, signInWithOAuth } = useOAuth()
@@ -280,7 +280,7 @@ function OAuthLogin() {
 
 import { Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useAuth } from '@uauth/next'
+import { useAuth } from '@nightmar3/uauth-next'
 
 export default function CallbackPage() {
   return (
@@ -312,7 +312,7 @@ function CallbackHandler() {
 
 ```tsx
 // app/profile/page.tsx
-import { getSession, getUser } from '@uauth/next/server'
+import { getSession, getUser } from '@nightmar3/uauth-next/server'
 import { redirect } from 'next/navigation'
 
 export default async function ProfilePage() {
@@ -334,7 +334,7 @@ export default async function ProfilePage() {
 ### Conditional UI Rendering
 
 ```tsx
-import { SignedIn, SignedOut, AuthGate } from '@uauth/next'
+import { SignedIn, SignedOut, AuthGate } from '@nightmar3/uauth-next'
 
 function Header() {
   return (
@@ -412,7 +412,7 @@ By default, tokens are automatically refreshed before they expire. This happens 
 ```tsx
 'use client'
 
-import { useAuth } from '@uauth/next'
+import { useAuth } from '@nightmar3/uauth-next'
 
 function RefreshButton() {
   const { refreshSession } = useAuth()
@@ -430,7 +430,7 @@ function RefreshButton() {
 
 ```tsx
 // app/api/refresh/route.ts
-import { refreshToken } from '@uauth/next/server'
+import { refreshToken } from '@nightmar3/uauth-next/server'
 
 export async function POST() {
   const result = await refreshToken()
@@ -455,7 +455,7 @@ This happens transparently - you just use `getSession()`:
 
 ```tsx
 // app/dashboard/page.tsx
-import { getSession } from '@uauth/next/server'
+import { getSession } from '@nightmar3/uauth-next/server'
 import { redirect } from 'next/navigation'
 
 export default async function DashboardPage() {
@@ -474,7 +474,7 @@ export default async function DashboardPage() {
 
 ## API Reference
 
-### Client (`@uauth/next`)
+### Client (`@nightmar3/uauth-next`)
 
 #### AuthProvider
 
@@ -532,7 +532,7 @@ Render children based on auth state.
 | `fallback` | `ReactNode` | Shown when not authenticated |
 | `loading` | `ReactNode` | Shown while loading |
 
-### Server (`@uauth/next/server`)
+### Server (`@nightmar3/uauth-next/server`)
 
 #### getSession()
 
@@ -583,7 +583,7 @@ if (result.ok) {
 }
 ```
 
-### Middleware (`@uauth/next/middleware`)
+### Middleware (`@nightmar3/uauth-next/middleware`)
 
 #### authMiddleware(options)
 

@@ -13,10 +13,10 @@ Universal Auth SDK is a lightweight, framework-agnostic authentication library t
 ```
 universal-auth-sdk/
 ├── packages/
-│   ├── core/           # @uauth/core - Core SDK (framework-agnostic)
-│   ├── react/          # @uauth/react - React hooks and components
-│   ├── next/           # @uauth/next - Next.js integration (App Router)
-│   └── server/         # @uauth/server - Server-side utilities
+│   ├── core/           # @nightmar3/uauth-core - Core SDK (framework-agnostic)
+│   ├── react/          # @nightmar3/uauth-react - React hooks and components
+│   ├── next/           # @nightmar3/uauth-next - Next.js integration (App Router)
+│   └── server/         # @nightmar3/uauth-server - Server-side utilities
 ├── backends/
 │   └── fastapi/        # Reference FastAPI backend implementation
 ├── examples/
@@ -30,13 +30,13 @@ universal-auth-sdk/
 ## Package Dependencies
 
 ```
-@uauth/core (no dependencies)
+@nightmar3/uauth-core (no dependencies)
     ↓
-@uauth/server (depends on @uauth/core)
+@nightmar3/uauth-server (depends on @nightmar3/uauth-core)
     ↓
-@uauth/react (depends on @uauth/core)
+@nightmar3/uauth-react (depends on @nightmar3/uauth-core)
     ↓
-@uauth/next (depends on @uauth/core, @uauth/server, @uauth/react)
+@nightmar3/uauth-next (depends on @nightmar3/uauth-core, @nightmar3/uauth-server, @nightmar3/uauth-react)
 ```
 
 **Build Order:** Always build in this order: core → server → react → next
@@ -45,7 +45,7 @@ universal-auth-sdk/
 
 ## Key Files by Package
 
-### @uauth/core (`packages/core/`)
+### @nightmar3/uauth-core (`packages/core/`)
 
 | File | Purpose |
 |------|---------|
@@ -57,7 +57,7 @@ universal-auth-sdk/
 | `src/api.ts` | Low-level utilities (refreshTokenRequest) |
 | `src/plugins/oauth2.ts` | OAuth2 plugin for social login |
 
-### @uauth/react (`packages/react/`)
+### @nightmar3/uauth-react (`packages/react/`)
 
 | File | Purpose |
 |------|---------|
@@ -66,7 +66,7 @@ universal-auth-sdk/
 | `src/components.tsx` | RequireAuth, GuestOnly, AuthGuard components |
 | `src/useOAuth.tsx` | useOAuth hook for OAuth2 plugin |
 
-### @uauth/next (`packages/next/`)
+### @nightmar3/uauth-next (`packages/next/`)
 
 | File | Purpose |
 |------|---------|
@@ -76,7 +76,7 @@ universal-auth-sdk/
 | `src/middleware.ts` | authMiddleware for route protection |
 | `src/config.ts` | Configuration (baseURL, cookie names, etc.) |
 
-### @uauth/server (`packages/server/`)
+### @nightmar3/uauth-server (`packages/server/`)
 
 | File | Purpose |
 |------|---------|
@@ -180,7 +180,7 @@ npm run build
 npm test
 
 # Run specific package tests
-npm run test --workspace=@uauth/core
+npm run test --workspace=@nightmar3/uauth-core
 
 # Start FastAPI backend
 cd backends/fastapi
@@ -201,13 +201,13 @@ npm run dev
 1. Add to `packages/core/src/auth.ts` (UniversalAuth class)
 2. Add type to `packages/core/src/types.ts` if needed
 3. Export from `packages/core/src/index.ts`
-4. Rebuild: `npm run build --workspace=@uauth/core`
+4. Rebuild: `npm run build --workspace=@nightmar3/uauth-core`
 
 ### Adding a React Hook
 
 1. Create hook in `packages/react/src/`
 2. Export from `packages/react/src/index.tsx`
-3. Rebuild: `npm run build --workspace=@uauth/react`
+3. Rebuild: `npm run build --workspace=@nightmar3/uauth-react`
 
 ### Adding Server-Side Feature
 
@@ -292,7 +292,7 @@ const result = await serverAuth.getSession(cookieHeader, onTokenRefresh)
 
 1. **Build Order Matters**: Always build packages in dependency order
 2. **TypeScript Strict**: All packages use strict TypeScript
-3. **No External Dependencies in Core**: @uauth/core has zero runtime dependencies
+3. **No External Dependencies in Core**: @nightmar3/uauth-core has zero runtime dependencies
 4. **Cookie Names**: Default prefix is `uauth_` (configurable)
 5. **Environment Variables**:
    - `NEXT_PUBLIC_AUTH_URL` - Client-side auth URL

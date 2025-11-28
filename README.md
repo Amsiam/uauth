@@ -61,22 +61,22 @@ await auth.signOut()
 
 ```bash
 # Core SDK
-npm install @uauth/core
+npm install @nightmar3/uauth-core
 
 # React hooks (optional)
-npm install @uauth/react
+npm install @nightmar3/uauth-react
 
 # Next.js integration (optional)
-npm install @uauth/next
+npm install @nightmar3/uauth-next
 
 # Server utilities (optional)
-npm install @uauth/server
+npm install @nightmar3/uauth-server
 ```
 
 ### Basic Usage
 
 ```typescript
-import { createAuth } from '@uauth/core'
+import { createAuth } from '@nightmar3/uauth-core'
 
 const auth = createAuth({
   baseURL: 'https://api.yourapp.com/auth',
@@ -97,8 +97,8 @@ if (result.ok) {
 ### React Hooks
 
 ```tsx
-import { createAuth, createOAuth2Plugin } from '@uauth/core'
-import { AuthProvider, useAuth } from '@uauth/react'
+import { createAuth, createOAuth2Plugin } from '@nightmar3/uauth-core'
+import { AuthProvider, useAuth } from '@nightmar3/uauth-react'
 
 const auth = createAuth({
   baseURL: 'https://api.yourapp.com/auth',
@@ -136,7 +136,7 @@ function Profile() {
 // app/providers.tsx
 'use client'
 
-import { AuthProvider, createOAuth2Plugin } from '@uauth/next'
+import { AuthProvider, createOAuth2Plugin } from '@nightmar3/uauth-next'
 
 // Optional: Add OAuth support
 const plugins = [createOAuth2Plugin()]
@@ -152,7 +152,7 @@ export function Providers({ children }) {
 
 ```tsx
 // app/dashboard/page.tsx
-import { getSession } from '@uauth/next/server'
+import { getSession } from '@nightmar3/uauth-next/server'
 import { redirect } from 'next/navigation'
 
 export default async function DashboardPage() {
@@ -173,8 +173,8 @@ OAuth is completely optional. If you only need email/password, skip this section
 ### Add OAuth Support
 
 ```tsx
-import { createOAuth2Plugin } from '@uauth/core'
-import { AuthProvider, useOAuth } from '@uauth/react'
+import { createOAuth2Plugin } from '@nightmar3/uauth-core'
+import { AuthProvider, useOAuth } from '@nightmar3/uauth-react'
 
 // Add plugin to enable OAuth
 const plugins = [createOAuth2Plugin()]
@@ -257,10 +257,10 @@ Backend runs on `http://localhost:8000`
 
 | Package | Description | Size |
 |---------|-------------|------|
-| `@uauth/core` | Core SDK | < 3kb |
-| `@uauth/react` | React hooks | < 2kb |
-| `@uauth/next` | Next.js integration | < 2kb |
-| `@uauth/server` | Server utilities | < 1kb |
+| `@nightmar3/uauth-core` | Core SDK | < 3kb |
+| `@nightmar3/uauth-react` | React hooks | < 2kb |
+| `@nightmar3/uauth-next` | Next.js integration | < 2kb |
+| `@nightmar3/uauth-server` | Server utilities | < 1kb |
 
 ## Documentation
 
@@ -275,8 +275,8 @@ Backend runs on `http://localhost:8000`
 Extend the SDK with optional plugins:
 
 ```typescript
-import { createAuth, createOAuth2Plugin } from '@uauth/core'
-import { AuthProvider } from '@uauth/react'
+import { createAuth, createOAuth2Plugin } from '@nightmar3/uauth-core'
+import { AuthProvider } from '@nightmar3/uauth-react'
 
 const auth = createAuth({ baseURL: '...' })
 

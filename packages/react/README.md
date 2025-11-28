@@ -1,4 +1,4 @@
-# @uauth/react
+# @nightmar3/uauth-react
 
 React hooks and components for Universal Auth SDK.
 
@@ -7,14 +7,14 @@ React hooks and components for Universal Auth SDK.
 ### Step 1: Install Packages
 
 ```bash
-npm install @uauth/core @uauth/react
+npm install @nightmar3/uauth-core @nightmar3/uauth-react
 ```
 
 ### Step 2: Create Auth Instance
 
 ```tsx
 // lib/auth.ts
-import { createAuth } from '@uauth/core'
+import { createAuth } from '@nightmar3/uauth-core'
 
 export const auth = createAuth({
   baseURL: 'https://api.yourapp.com/auth',
@@ -26,7 +26,7 @@ export const auth = createAuth({
 
 ```tsx
 // App.tsx
-import { AuthProvider } from '@uauth/react'
+import { AuthProvider } from '@nightmar3/uauth-react'
 import { auth } from './lib/auth'
 
 function App() {
@@ -42,7 +42,7 @@ function App() {
 
 ```tsx
 import { useState } from 'react'
-import { useAuth } from '@uauth/react'
+import { useAuth } from '@nightmar3/uauth-react'
 
 function LoginForm() {
   const { signIn, isLoading, error } = useAuth()
@@ -85,7 +85,7 @@ function LoginForm() {
 ### Step 5: Create Protected Content
 
 ```tsx
-import { RequireAuth, useAuth } from '@uauth/react'
+import { RequireAuth, useAuth } from '@nightmar3/uauth-react'
 
 function Dashboard() {
   const { user, signOut } = useAuth()
@@ -134,8 +134,8 @@ To add OAuth support:
 **1. Add the OAuth2 plugin to AuthProvider:**
 
 ```tsx
-import { createAuth, createOAuth2Plugin } from '@uauth/core'
-import { AuthProvider } from '@uauth/react'
+import { createAuth, createOAuth2Plugin } from '@nightmar3/uauth-core'
+import { AuthProvider } from '@nightmar3/uauth-react'
 
 const auth = createAuth({
   baseURL: 'https://api.yourapp.com/auth',
@@ -157,7 +157,7 @@ function App() {
 **2. Use the `useOAuth` hook:**
 
 ```tsx
-import { useOAuth } from '@uauth/react'
+import { useOAuth } from '@nightmar3/uauth-react'
 
 function OAuthButtons() {
   const { providers, isLoading, signInWithOAuth } = useOAuth()
@@ -186,7 +186,7 @@ function OAuthButtons() {
 
 ```tsx
 import { useState } from 'react'
-import { useAuth, useOAuth } from '@uauth/react'
+import { useAuth, useOAuth } from '@nightmar3/uauth-react'
 
 function LoginPage() {
   const { signIn, isLoading, error } = useAuth()
@@ -248,7 +248,7 @@ function LoginPage() {
 
 ```tsx
 import { Navigate } from 'react-router-dom'
-import { RequireAuth } from '@uauth/react'
+import { RequireAuth } from '@nightmar3/uauth-react'
 
 function ProtectedRoute({ children }) {
   return (
@@ -269,7 +269,7 @@ function ProtectedRoute({ children }) {
 ### Role-Based Access Control
 
 ```tsx
-import { AuthGuard } from '@uauth/react'
+import { AuthGuard } from '@nightmar3/uauth-react'
 
 function AdminRoute({ children }) {
   return (
@@ -541,11 +541,11 @@ The previous `OAuth2Provider` and `useOAuth2` APIs are still available for backw
 
 ```tsx
 // Legacy (still works)
-import { OAuth2Provider, useOAuth2 } from '@uauth/react'
+import { OAuth2Provider, useOAuth2 } from '@nightmar3/uauth-react'
 
 // New approach (recommended)
-import { AuthProvider, useOAuth } from '@uauth/react'
-import { createOAuth2Plugin } from '@uauth/core'
+import { AuthProvider, useOAuth } from '@nightmar3/uauth-react'
+import { createOAuth2Plugin } from '@nightmar3/uauth-core'
 ```
 
 ---
