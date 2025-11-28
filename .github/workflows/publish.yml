@@ -41,12 +41,16 @@ jobs:
 
       - name: Publish @nightmar3/uauth-core
         run: npm publish -w @nightmar3/uauth-core --access public
+        continue-on-error: true
 
       - name: Publish @nightmar3/uauth-server
         run: npm publish -w @nightmar3/uauth-server --access public
+        continue-on-error: true
 
       - name: Publish @nightmar3/uauth-react
         run: npm publish -w @nightmar3/uauth-react --access public
+        continue-on-error: true
 
       - name: Publish @nightmar3/uauth-next
         run: npm publish -w @nightmar3/uauth-next --access public
+        continue-on-error: true
