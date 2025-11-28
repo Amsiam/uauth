@@ -19,9 +19,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
+
+      - name: Upgrade npm to latest (for OIDC support)
+        run: npm install -g npm@latest
 
       - name: Install dependencies
         run: npm ci
@@ -37,21 +40,13 @@ jobs:
         run: npm test
 
       - name: Publish @nightmar3/uauth-core
-        run: npm publish -w @nightmar3/uauth-core --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish -w @nightmar3/uauth-core --access public
 
       - name: Publish @nightmar3/uauth-server
-        run: npm publish -w @nightmar3/uauth-server --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish -w @nightmar3/uauth-server --access public
 
       - name: Publish @nightmar3/uauth-react
-        run: npm publish -w @nightmar3/uauth-react --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish -w @nightmar3/uauth-react --access public
 
       - name: Publish @nightmar3/uauth-next
-        run: npm publish -w @nightmar3/uauth-next --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish -w @nightmar3/uauth-next --access public
