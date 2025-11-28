@@ -35,7 +35,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/amsiam/uauth.git",
+    "url": "https://github.com/Amsiam/uauth.git",
     "directory": "packages/server"
   },
   "peerDependencies": {
