@@ -361,8 +361,8 @@ MIT License - see [LICENSE](LICENSE) for details
 ## Support
 
 - [Documentation](packages/)
-- [Issue Tracker](https://github.com/universal-auth/sdk/issues)
-- [Discussions](https://github.com/universal-auth/sdk/discussions)
+- [Issue Tracker](https://github.com/amsiam/uauth/issues)
+- [Discussions](https://github.com/amsiam/uauth/discussions)
 
 ---
 
