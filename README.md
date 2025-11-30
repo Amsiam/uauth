@@ -41,10 +41,10 @@ await auth.signOut()
 ### For Frontend Developers
 
 - **Tiny bundle** - < 3kb gzipped
-- **Framework integrations** - React hooks, Next.js SSR
+- **Framework integrations** - React hooks, Next.js SSR, TanStack Start
 - **Auto token refresh** - Handles 401 automatically
 - **TypeScript** - Full type safety
-- **Works everywhere** - React, Next.js, React Native, Vue, Svelte
+- **Works everywhere** - React, Next.js, TanStack Start, React Native, Vue, Svelte
 - **Plugin system** - OAuth2, magic links, 2FA (all optional)
 
 ### For Backend Developers
@@ -68,6 +68,9 @@ npm install @nightmar3/uauth-react
 
 # Next.js integration (optional)
 npm install @nightmar3/uauth-next
+
+# TanStack Start integration (optional)
+npm install @nightmar3/uauth-start
 
 # Server utilities (optional)
 npm install @nightmar3/uauth-server
@@ -260,6 +263,7 @@ Backend runs on `http://localhost:8000`
 | `@nightmar3/uauth-core` | Core SDK | < 3kb |
 | `@nightmar3/uauth-react` | React hooks | < 2kb |
 | `@nightmar3/uauth-next` | Next.js integration | < 2kb |
+| `@nightmar3/uauth-start` | TanStack Start integration | < 2kb |
 | `@nightmar3/uauth-server` | Server utilities | < 1kb |
 
 ## Documentation
@@ -267,6 +271,7 @@ Backend runs on `http://localhost:8000`
 - [Core SDK API](packages/core/README.md)
 - [React Hooks](packages/react/README.md)
 - [Next.js Integration](packages/next/README.md)
+- [TanStack Start Integration](packages/start/README.md)
 - [Server Utilities](packages/server/README.md)
 - [FastAPI Backend](backends/fastapi/README.md)
 

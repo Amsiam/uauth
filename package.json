@@ -33,6 +33,8 @@
     "oauth",
     "react",
     "nextjs",
+    "tanstack",
+    "tanstack-start",
     "universal"
   ],
   "author": "",
