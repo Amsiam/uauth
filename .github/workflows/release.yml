@@ -85,12 +85,35 @@ jobs:
           # Insert after first line (the # Changelog header)
           sed -i '1r /tmp/changelog_entry.txt' CHANGELOG.md
 
-      - name: Commit changes
+      - name: Create release branch and commit changes
+        id: create_branch
         run: |
+          BRANCH_NAME="release/${{ github.event.inputs.package }}-${{ steps.version.outputs.new_version }}"
+          git checkout -b "$BRANCH_NAME"
           git add packages/${{ github.event.inputs.package }}/package.json
           git add packages/${{ github.event.inputs.package }}/CHANGELOG.md
           git commit -m "chore(${{ github.event.inputs.package }}): release ${{ steps.version.outputs.new_version }}"
-          git push
+          git push origin "$BRANCH_NAME"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.create_branch.outputs.branch_name }}
+          title: "chore(${{ github.event.inputs.package }}): release ${{ steps.version.outputs.new_version }}"
+          body: |
+            ## Release ${{ steps.version.outputs.package_name }} ${{ steps.version.outputs.new_version }}
+            
+            This PR bumps the version of `${{ steps.version.outputs.package_name }}` to `${{ steps.version.outputs.new_version }}`.
+            
+            ### Changes
+            - Updated `package.json` version
+            - Updated `CHANGELOG.md`
+            
+            **Please merge this PR to complete the release process.**
+          labels: release
+          assignees: ${{ github.actor }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
