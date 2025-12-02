@@ -5,6 +5,8 @@ This project demonstrates how to integrate `@nightmar3/uauth-tanstack-start` int
 ## Prerequisites
 
 1. **Auth Backend**: Ensure the FastAPI backend is running.
+   
+   > **Note:** The backend must implement the standard Universal Auth contract. See [Backend Requirements](../../packages/tanstack-start/README.md#backend-requirements) for details on required endpoints and response formats.
 
    ```bash
    cd ../../backends/fastapi
