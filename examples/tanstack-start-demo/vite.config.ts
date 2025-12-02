@@ -18,6 +18,11 @@ const config = defineConfig({
     tanstackStart(),
     viteReact(),
   ],
+  server: {
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+    },
+  },
 })
 
 export default config
