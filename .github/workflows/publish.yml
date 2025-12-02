@@ -35,6 +35,7 @@ jobs:
           npm run build -w @nightmar3/uauth-server
           npm run build -w @nightmar3/uauth-react
           npm run build -w @nightmar3/uauth-next
+          npm run build -w @nightmar3/uauth-tanstack-start
 
       - name: Run tests
         run: npm test
@@ -53,4 +54,8 @@ jobs:
 
       - name: Publish @nightmar3/uauth-next
         run: npm publish -w @nightmar3/uauth-next --access public
+        continue-on-error: true
+
+      - name: Publish @nightmar3/uauth-tanstack-start
+        run: npm publish -w @nightmar3/uauth-tanstack-start --access public
         continue-on-error: true
