@@ -53,19 +53,25 @@ jobs:
         id: version
         run: |
           cd packages/${{ github.event.inputs.package }}
-          NEW_VERSION=$(npm version ${{ github.event.inputs.version }} --no-git-tag-version)
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "package_name=$(node -p "require('./package.json').name")" >> $GITHUB_OUTPUT
+
+          # Run version bump but strip leading "v" so GitHub output doesn't break
+          RAW_VERSION=$(npm version ${{ github.event.inputs.version }} --no-git-tag-version)
+          CLEAN_VERSION=$(echo "$RAW_VERSION" | sed 's/^v//')
+
+          echo "new_version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
+
+          PKG=$(node -p "require('./package.json').name")
+          echo "package_name=$PKG" >> $GITHUB_OUTPUT
 
       - name: Update changelog
         run: |
           cd packages/${{ github.event.inputs.package }}
+          
           if [ ! -f CHANGELOG.md ]; then
             echo "# Changelog" > CHANGELOG.md
             echo "" >> CHANGELOG.md
           fi
           
-          # Add new version entry
           sed -i "2i\\
           ## ${{ steps.version.outputs.new_version }} - $(date +%Y-%m-%d)\\
           \\
