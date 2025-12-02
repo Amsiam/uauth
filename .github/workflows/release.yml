@@ -54,14 +54,20 @@ jobs:
         run: |
           cd packages/${{ github.event.inputs.package }}
 
-          # Run version bump but strip leading "v" so GitHub output doesn't break
           RAW_VERSION=$(npm version ${{ github.event.inputs.version }} --no-git-tag-version)
+
+          # Strip the leading 'v'
           CLEAN_VERSION=$(echo "$RAW_VERSION" | sed 's/^v//')
 
-          echo "new_version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
+          # Escape according to GitHub Actions requirements
+          ESCAPED_VERSION="${CLEAN_VERSION//'%'/'%25'}"
+          ESCAPED_VERSION="${ESCAPED_VERSION//$'\n'/'%0A'}"
+          ESCAPED_VERSION="${ESCAPED_VERSION//$'\r'/'%0D'}"
 
-          PKG=$(node -p "require('./package.json').name")
-          echo "package_name=$PKG" >> $GITHUB_OUTPUT
+          echo "new_version=$ESCAPED_VERSION" >> $GITHUB_OUTPUT
+
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          echo "package_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
 
       - name: Update changelog
         run: |
