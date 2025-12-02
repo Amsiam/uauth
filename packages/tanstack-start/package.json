@@ -1,6 +1,6 @@
 {
   "name": "@nightmar3/uauth-tanstack-start",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "TanStack Start integration for Universal Auth SDK - Zero config authentication with full SSR support",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
