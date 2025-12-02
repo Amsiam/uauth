@@ -64,7 +64,10 @@ class TanStackSessionAdapter implements StorageAdapter {
 /**
  * Helper to create an auth instance scoped to the current request session
  */
-export async function getAuth() {
+export async function getAuth(): Promise<{
+  auth: UniversalAuthSDK
+  session: Awaited<ReturnType<typeof useAuthSession>>
+}> {
   const config = getConfig()
   const session = await useAuthSession()
   
