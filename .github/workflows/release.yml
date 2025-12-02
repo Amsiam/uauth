@@ -85,22 +85,14 @@ jobs:
           # Insert after first line (the # Changelog header)
           sed -i '1r /tmp/changelog_entry.txt' CHANGELOG.md
 
-      - name: Create release branch and commit changes
-        id: create_branch
-        run: |
-          BRANCH_NAME="release/${{ github.event.inputs.package }}-${{ steps.version.outputs.new_version }}"
-          git checkout -b "$BRANCH_NAME"
-          git add packages/${{ github.event.inputs.package }}/package.json
-          git add packages/${{ github.event.inputs.package }}/CHANGELOG.md
-          git commit -m "chore(${{ github.event.inputs.package }}): release ${{ steps.version.outputs.new_version }}"
-          git push origin "$BRANCH_NAME"
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-
       - name: Create Pull Request
+        id: create_pr
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ steps.create_branch.outputs.branch_name }}
+          commit-message: "chore(${{ github.event.inputs.package }}): release ${{ steps.version.outputs.new_version }}"
+          branch: release/${{ github.event.inputs.package }}-${{ steps.version.outputs.new_version }}
+          delete-branch: true
           title: "chore(${{ github.event.inputs.package }}): release ${{ steps.version.outputs.new_version }}"
           body: |
             ## Release ${{ steps.version.outputs.package_name }} ${{ steps.version.outputs.new_version }}
