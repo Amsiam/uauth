@@ -1,10 +1,11 @@
 # TanStack Start Auth Demo
 
-This project demonstrates how to integrate `@nightmar3/uauth-tanstack-start` into a TanStack Start application.
+This project demonstrates how to integrate `@nightmar3/uauth-tanstack-start` into a TanStack Start application with full OAuth support.
 
 ## Prerequisites
 
 1. **Auth Backend**: Ensure the FastAPI backend is running.
+
    ```bash
    cd ../../backends/fastapi
    # Follow backend README instructions to start the server
@@ -13,24 +14,87 @@ This project demonstrates how to integrate `@nightmar3/uauth-tanstack-start` int
 ## Setup
 
 1. **Install Dependencies**:
+
    ```bash
    npm install
    ```
 
 2. **Environment Configuration**:
+
    Create a `.env` file in the root of this demo project:
+
    ```env
    # URL of your running Auth Backend
    VITE_AUTH_URL=http://localhost:8000
+   AUTH_URL=http://localhost:8000
    
    # Secret for encrypting session cookies (min 32 chars)
    SESSION_SECRET=super-secret-dev-key-change-me-to-something-very-long-and-secure
+   
+   # Optional: OAuth provider credentials
+   GOOGLE_CLIENT_ID=your-google-client-id
+   GOOGLE_CLIENT_SECRET=your-google-client-secret
+   GITHUB_CLIENT_ID=your-github-client-id
+   GITHUB_CLIENT_SECRET=your-github-client-secret
    ```
 
 3. **Run the Development Server**:
+
    ```bash
    npm run dev
    ```
+
+   The app will be available at `http://localhost:3000`
+
+## Production Build
+
+1. **Build the application**:
+
+   ```bash
+   npm run build
+   ```
+
+2. **Run the production server**:
+
+   ```bash
+   # Load environment variables and start
+   export $(cat .env | xargs) && npm start
+   
+   # Or set them inline
+   SESSION_SECRET="your-secret" AUTH_URL="http://localhost:8000" npm start
+   ```
+
+## Features Demonstrated
+
+### ✅ Password Authentication
+
+- Sign up with email and password
+- Sign in with email and password
+- Session management with HTTP-only cookies
+
+### ✅ OAuth Authentication
+
+- Google OAuth integration
+- GitHub OAuth integration
+- Popup-based OAuth flow
+- Automatic session creation
+
+### ✅ Protected Routes
+
+- Dashboard route protected with `createAuthBeforeLoad`
+- Automatic redirect to login for unauthenticated users
+- User context available in protected routes
+
+### ✅ Server Functions
+
+- Protected server functions with `createAuthMiddleware`
+- Type-safe user context in server functions
+- Automatic token refresh
+
+### ✅ 404 Page
+
+- Custom NotFound component
+- User-friendly error page
 
 ## Integration Steps
 
@@ -43,7 +107,6 @@ import { getSessionFn } from '@nightmar3/uauth-tanstack-start/server'
 import type { User } from '@nightmar3/uauth-core'
 
 interface MyRouterContext {
-  // ... other context
   session: Awaited<ReturnType<typeof getSessionFn>>
   user: User | null
   isAuthenticated: boolean
@@ -58,35 +121,70 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       isAuthenticated: !!session?.user
     }
   },
-  // ...
+  notFoundComponent: NotFound,
 })
 ```
 
 ### 2. Create Login Page (`src/routes/login.tsx`)
 
-Use the `useAuth` hook to handle sign-in and sign-up.
+Use the `useAuth` and `useOAuth` hooks to handle authentication.
 
 ```tsx
-import { useAuth } from '@nightmar3/uauth-tanstack-start/client'
+import { useAuth, useOAuth } from '@nightmar3/uauth-tanstack-start/client'
 
 function Login() {
   const { signIn, signUp } = useAuth()
+  const { providers, signInWithOAuth } = useOAuth()
   
   const handleLogin = async (e) => {
     e.preventDefault()
     const result = await signIn(email, password)
     if (result.ok) {
       window.location.href = '/dashboard'
-    } else {
-      console.error(result.error)
     }
   }
   
-  // ... render form
+  const handleOAuth = async (provider) => {
+    await signInWithOAuth(provider)
+    window.location.href = '/dashboard'
+  }
+  
+  // ... render form with OAuth buttons
 }
 ```
 
-### 3. Protect Routes (`src/routes/dashboard.tsx`)
+### 3. Create OAuth Callback Route (`src/routes/auth/callback.tsx`)
+
+Handle OAuth redirects with a callback route.
+
+```tsx
+import { createFileRoute } from '@tanstack/react-router'
+import { useEffect } from 'react'
+
+export const Route = createFileRoute('/auth/callback')({
+  component: AuthCallback,
+})
+
+function AuthCallback() {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+    const error = params.get('error')
+
+    if (window.opener) {
+      window.opener.postMessage(
+        { type: 'oauth2_callback', code, error },
+        window.location.origin
+      )
+      setTimeout(() => window.close(), 100)
+    }
+  }, [])
+
+  return <div>Processing authentication...</div>
+}
+```
+
+### 4. Protect Routes (`src/routes/dashboard.tsx`)
 
 Use `createAuthBeforeLoad` to protect routes that require authentication.
 
@@ -101,7 +199,7 @@ export const Route = createFileRoute('/dashboard')({
 })
 ```
 
-### 4. Access User Data
+### 5. Access User Data
 
 Use the `useUser` hook in your components to access the current user.
 
@@ -119,7 +217,7 @@ function Dashboard() {
 }
 ```
 
-### 5. Protect Server Functions
+### 6. Protect Server Functions
 
 Use `createAuthMiddleware` to protect server-side functions.
 
@@ -137,10 +235,47 @@ const getSecretData = createServerFn({ method: 'GET' })
   })
 ```
 
-## Features
+## Project Structure
 
-- **Server-Side Session Management**: HttpOnly cookies managed securely.
-- **Type-Safe Context**: Full TypeScript support for user and session data.
-- **Protected Routes**: Easy middleware for route protection.
-- **Server Function Middleware**: Secure your API endpoints.
-- **OAuth Support**: Built-in support for OAuth providers (Google, GitHub, etc.).
+```
+src/
+├── routes/
+│   ├── __root.tsx          # Root route with auth context
+│   ├── index.tsx           # Home page
+│   ├── login.tsx           # Login/signup page with OAuth
+│   ├── dashboard.tsx       # Protected dashboard
+│   └── auth/
+│       └── callback.tsx    # OAuth callback handler
+├── components/
+│   └── Header.tsx          # Navigation header
+└── styles.css              # Global styles
+```
+
+## Troubleshooting
+
+### SESSION_SECRET Error on Production Build
+
+If you see "SESSION_SECRET environment variable is required" when running the production build:
+
+```bash
+# Make sure to set the environment variable
+export SESSION_SECRET="your-secret-at-least-32-chars"
+npm start
+```
+
+### OAuth Popup Blocked
+
+If OAuth popups are blocked by the browser:
+
+- Allow popups for `localhost:3000` in your browser settings
+- Or use the OAuth redirect flow instead of popup flow
+
+### Hydration Mismatch Warning
+
+If you see hydration warnings in the console, this is likely caused by browser extensions (password managers, etc.) modifying the DOM. This is harmless and doesn't affect functionality.
+
+## Learn More
+
+- [TanStack Start Documentation](https://tanstack.com/start)
+- [Universal Auth SDK](https://github.com/Amsiam/uauth)
+- [Package README](../../packages/tanstack-start/README.md)

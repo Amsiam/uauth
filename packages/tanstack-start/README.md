@@ -54,8 +54,6 @@ export const Route = createRootRoute({
 
 ```tsx
 // components/Profile.tsx
-'use client'
-
 import { useAuth } from '@nightmar3/uauth-tanstack-start/client'
 
 export function Profile() {
@@ -244,14 +242,95 @@ Fresh user data from server
 UI updates
 ```
 
+## OAuth Support
+
+### Setup OAuth Providers
+
+```tsx
+// Use the useOAuth hook in your login component
+import { useOAuth } from '@nightmar3/uauth-tanstack-start/client'
+
+function LoginPage() {
+  const { providers, signInWithOAuth } = useOAuth()
+
+  return (
+    <div>
+      {providers.map((provider) => (
+        <button
+          key={provider.name}
+          onClick={async () => {
+            await signInWithOAuth(provider.name)
+            window.location.href = '/dashboard'
+          }}
+        >
+          Sign in with {provider.displayName}
+        </button>
+      ))}
+    </div>
+  )
+}
+```
+
+### OAuth Callback Route
+
+Create a callback route to handle OAuth redirects:
+
+```tsx
+// routes/auth/callback.tsx
+import { createFileRoute } from '@tanstack/react-router'
+import { useEffect } from 'react'
+
+export const Route = createFileRoute('/auth/callback')({
+  component: AuthCallback,
+})
+
+function AuthCallback() {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+    const error = params.get('error')
+    const error_description = params.get('error_description')
+
+    if (window.opener) {
+      window.opener.postMessage(
+        {
+          type: 'oauth2_callback',
+          code,
+          error,
+          error_description,
+        },
+        window.location.origin
+      )
+      
+      setTimeout(() => {
+        window.close()
+      }, 100)
+    }
+  }, [])
+
+  return <div>Processing authentication...</div>
+}
+```
+
 ## Configuration
 
-### Environment Variables (Recommended)
+### Environment Variables (Required)
 
 ```bash
-AUTH_URL=https://api.yourapp.com/auth
+# Required for session encryption
 SESSION_SECRET=your-secret-key-min-32-characters
+
+# Required for API communication
+AUTH_URL=https://api.yourapp.com/auth
+
+# Optional: OAuth provider credentials (if using OAuth)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
 ```
+
+> **Important**: `SESSION_SECRET` must be set when running the production build. It's validated at runtime, not build time.
 
 ### Programmatic Configuration
 
@@ -269,13 +348,48 @@ configureAuth({
 })
 ```
 
+## Production Deployment
+
+### Building for Production
+
+```bash
+npm run build
+```
+
+### Running the Production Build
+
+You must provide environment variables when running the production server:
+
+```bash
+# Option 1: Inline environment variables
+SESSION_SECRET="your-secret" AUTH_URL="https://api.yourapp.com/auth" npm start
+
+# Option 2: Load from .env file
+export $(cat .env | xargs) && npm start
+
+# Option 3: Use a process manager like PM2
+pm2 start .output/server/index.mjs --name "my-app" --env production
+```
+
+### Deployment Platforms
+
+For platforms like Vercel, Netlify, or Railway:
+
+1. Set environment variables in your platform's dashboard
+2. Deploy your application
+3. The platform will automatically set the variables at runtime
+
+**Required Environment Variables for Production:**
+
+- `SESSION_SECRET` (min 32 characters)
+- `AUTH_URL` (your backend API URL)
+- OAuth credentials (if using OAuth)
+
 ## Examples
 
 ### Login Page
 
 ```tsx
-'use client'
-
 import { useAuth } from '@nightmar3/uauth-tanstack-start/client'
 import { useState } from 'react'
 
