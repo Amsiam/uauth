@@ -2,6 +2,9 @@
 
 Next.js integration for Universal Auth SDK. Provides seamless authentication with minimal setup.
 
+> [!IMPORTANT]
+> **Backend Required:** This SDK requires a backend API. See [Backend Requirements](#backend-requirements) for the complete API contract, or use our [Backend Implementation Guide](../../BACKEND_GUIDE.md) for step-by-step instructions.
+
 ## Setup Guide
 
 ### Step 1: Install the Package
@@ -471,6 +474,83 @@ export default async function DashboardPage() {
 ```
 
 ---
+
+## Backend Requirements
+
+The SDK expects a backend API that implements the following endpoints. You can use our [FastAPI reference implementation](../../backends/fastapi) or build your own.
+
+### Endpoints
+
+| Method | Path | Description | Request Body | Response Data |
+|--------|------|-------------|--------------|---------------|
+| `POST` | `/sign-in/password` | Sign in with email/password | `{ email, password }` | `{ user, tokens }` |
+| `POST` | `/sign-in/oauth2` | Exchange OAuth code for tokens | `{ provider, code, redirect_uri }` | `{ user, tokens }` |
+| `POST` | `/sign-up` | Create new account | `{ email, password, name? }` | `{ user, tokens }` |
+| `DELETE`| `/session` | Sign out (revoke tokens) | - | `{ ok: boolean }` |
+| `GET` | `/session` | Get current user session | - | `{ user }` |
+| `POST` | `/token/refresh` | Refresh access token | `{ refresh_token }` | `{ tokens }` |
+| `GET` | `/providers` | List available OAuth providers | - | `{ providers }` |
+
+### Response Format
+
+All API responses must follow this envelope structure:
+
+```typescript
+interface ApiResponse<T> {
+  ok: boolean
+  data: T | null
+  error: {
+    code: string
+    message: string
+    details?: any
+  } | null
+}
+```
+
+### Token Structure
+
+The backend must return tokens in this format:
+
+```typescript
+interface AuthTokens {
+  access_token: string
+  refresh_token: string
+  expires_in: number // seconds
+}
+```
+
+### OAuth Provider Response (Optional)
+
+If implementing OAuth support, the `/providers` endpoint must return:
+
+```typescript
+interface OAuth2Provider {
+  name: string
+  displayName: string
+  clientId: string
+  authorizationUrl: string
+  scope?: string
+}
+```
+
+**Example:**
+```json
+{
+  "ok": true,
+  "data": {
+    "providers": [
+      {
+        "name": "google",
+        "displayName": "Google",
+        "clientId": "your-google-client-id",
+        "authorizationUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+        "scope": "openid email profile"
+      }
+    ]
+  },
+  "error": null
+}
+```
 
 ## API Reference
 
