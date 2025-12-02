@@ -25,6 +25,13 @@ export function configureAuth(config: UAuthTanStackConfig): void {
 }
 
 /**
+ * Reset configuration (for testing)
+ */
+export function resetConfig(): void {
+  globalConfig = null
+}
+
+/**
  * Get the current auth configuration
  * Falls back to environment variables if not configured
  */
