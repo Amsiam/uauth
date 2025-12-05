@@ -38,9 +38,12 @@
   "publishConfig": {
     "access": "public"
   },
+  "bin": {
+    "uauth-tanstack": "./dist/bin.js"
+  },
   "scripts": {
-    "build": "tsup src/index.ts src/client.tsx src/server.ts src/middleware.ts src/context.tsx --format cjs,esm --dts --clean --external @tanstack/react-start --external @tanstack/react-router --external react",
-    "dev": "tsup src/index.ts src/client.tsx src/server.ts src/middleware.ts src/context.tsx --format cjs,esm --watch --external @tanstack/react-start --external @tanstack/react-router --external react",
+    "build": "tsup src/index.ts src/client.tsx src/server.ts src/middleware.ts src/context.tsx src/bin.ts --format cjs,esm --dts --clean --external @tanstack/react-start --external @tanstack/react-router --external react",
+    "dev": "tsup src/index.ts src/client.tsx src/server.ts src/middleware.ts src/context.tsx src/bin.ts --format cjs,esm --watch --external @tanstack/react-start --external @tanstack/react-router --external react",
     "test": "vitest run",
     "test:watch": "vitest"
   },

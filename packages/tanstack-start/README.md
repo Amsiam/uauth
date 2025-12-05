@@ -21,25 +21,47 @@
 ## Installation
 
 ```bash
-npm install @nightmar3/uauth-tanstack-start
+npm install @nightmar3/uauth-tanstack-start @nightmar3/uauth-core
 ```
 
 ## Quick Start
 
-### 1. Set Environment Variables
+### 1. Generate Auth Files
+
+Run the CLI to generate the authentication code directly in your project. This avoids build issues with server functions.
 
 ```bash
-# .env
-AUTH_URL=https://api.yourapp.com/auth
-SESSION_SECRET=your-secret-key-min-32-characters
+npx uauth-tanstack src/auth
 ```
 
-### 2. Set Up Root Route
+This will generate the following files in `src/auth`:
+- `server.ts` - Server-side auth functions
+- `client.tsx` - Client-side hooks
+- `session.ts` - Session management
+- `middleware.ts` - Route protection
+- `types.ts` - TypeScript definitions
+- `config.ts` - Configuration
+
+### 3. Configure Auth
+
+Call `configureAuth` in your app entry point (e.g., `src/app.tsx` or `src/router.tsx`) before creating the router.
+
+```tsx
+// src/app.tsx
+import { configureAuth } from './auth/config'
+
+configureAuth({
+  baseURL: 'https://api.yourapp.com/auth',
+  sessionSecret: process.env.SESSION_SECRET!,
+})
+```
+
+### 4. Set Up Root Route
 
 ```tsx
 // routes/__root.tsx
 import { createRootRoute } from '@tanstack/react-router'
-import { getSessionFn } from '@nightmar3/uauth-tanstack-start/server'
+import { getSessionFn } from '../auth/server'
 
 export const Route = createRootRoute({
   loader: async () => {
@@ -52,11 +74,11 @@ export const Route = createRootRoute({
 })
 ```
 
-### 3. Use in Components
+### 5. Use in Components
 
 ```tsx
 // components/Profile.tsx
-import { useAuth } from '@nightmar3/uauth-tanstack-start/client'
+import { useAuth } from '../auth/client'
 
 export function Profile() {
   const { user, isAuthenticated, signOut } = useAuth()
@@ -74,18 +96,17 @@ export function Profile() {
 }
 ```
 
-### 4. Protect Routes
+### 6. Protect Routes
 
 ```tsx
 // routes/dashboard.tsx
 import { createFileRoute } from '@tanstack/react-router'
-import { createAuthBeforeLoad } from '@nightmar3/uauth-tanstack-start/middleware'
+import { createAuthBeforeLoad } from '../auth/middleware'
 
 export const Route = createFileRoute('/dashboard')({
   beforeLoad: createAuthBeforeLoad({ redirectTo: '/login' }),
   component: DashboardPage,
 })
-```
 
 ## API Reference
 
@@ -95,6 +116,7 @@ export const Route = createFileRoute('/dashboard')({
 Get current session (auto-refreshes tokens if expired)
 
 ```tsx
+import { getSessionFn } from '../auth/server'
 const session = await getSessionFn()
 // Returns: { user, accessToken } | null
 ```
@@ -103,6 +125,7 @@ const session = await getSessionFn()
 Sign in with email and password
 
 ```tsx
+import { signInFn } from '../auth/server'
 const result = await signInFn({ 
   data: { email: 'user@example.com', password: 'password' } 
 })
@@ -112,6 +135,7 @@ const result = await signInFn({
 Create new user account
 
 ```tsx
+import { signUpFn } from '../auth/server'
 const result = await signUpFn({ 
   data: { email: 'user@example.com', password: 'password', name: 'John' } 
 })
@@ -121,6 +145,7 @@ const result = await signUpFn({
 Sign out and clear session
 
 ```tsx
+import { signOutFn } from '../auth/server'
 await signOutFn()
 ```
 
@@ -130,6 +155,7 @@ await signOutFn()
 Access auth state and methods
 
 ```tsx
+import { useAuth } from '../auth/client'
 const { user, isAuthenticated, signIn, signUp, signOut } = useAuth()
 ```
 
@@ -139,6 +165,7 @@ const { user, isAuthenticated, signIn, signUp, signOut } = useAuth()
 Get current user
 
 ```tsx
+import { useUser } from '../auth/client'
 const user = useUser()
 ```
 
@@ -146,6 +173,7 @@ const user = useUser()
 Get full session
 
 ```tsx
+import { useSession } from '../auth/client'
 const session = useSession()
 ```
 
@@ -155,6 +183,8 @@ const session = useSession()
 Render children only when authenticated
 
 ```tsx
+import { SignedIn } from '../auth/client'
+
 <SignedIn>
   <UserDashboard />
 </SignedIn>
@@ -164,6 +194,8 @@ Render children only when authenticated
 Render children only when NOT authenticated
 
 ```tsx
+import { SignedOut } from '../auth/client'
+
 <SignedOut>
   <LoginPrompt />
 </SignedOut>
@@ -173,6 +205,8 @@ Render children only when NOT authenticated
 Conditional rendering with fallback
 
 ```tsx
+import { AuthGate } from '../auth/client'
+
 <AuthGate fallback={<LoginPrompt />} loading={<Spinner />}>
   <UserDashboard />
 </AuthGate>
@@ -184,6 +218,8 @@ Conditional rendering with fallback
 Route protection helper
 
 ```tsx
+import { createAuthBeforeLoad } from '../auth/middleware'
+
 export const Route = createFileRoute('/protected')({
   beforeLoad: createAuthBeforeLoad({ redirectTo: '/login' }),
 })
@@ -193,6 +229,8 @@ export const Route = createFileRoute('/protected')({
 Simple auth requirement
 
 ```tsx
+import { requireAuth } from '../auth/middleware'
+
 export const Route = createFileRoute('/protected')({
   beforeLoad: requireAuth,
 })
@@ -202,6 +240,8 @@ export const Route = createFileRoute('/protected')({
 Server function middleware
 
 ```tsx
+import { createAuthMiddleware } from '../auth/middleware'
+
 const authMiddleware = createAuthMiddleware()
 
 export const protectedFn = createServerFn()
@@ -250,7 +290,7 @@ UI updates
 
 ```tsx
 // Use the useOAuth hook in your login component
-import { useOAuth } from '@nightmar3/uauth-tanstack-start/client'
+import { useOAuth } from '../auth/client'
 
 function LoginPage() {
   const { providers, signInWithOAuth } = useOAuth()
@@ -337,7 +377,7 @@ GITHUB_CLIENT_SECRET=your-github-client-secret
 ### Programmatic Configuration
 
 ```tsx
-import { configureAuth } from '@nightmar3/uauth-tanstack-start'
+import { configureAuth } from '../auth/config'
 
 configureAuth({
   baseURL: 'https://api.yourapp.com/auth',
@@ -469,7 +509,7 @@ For platforms like Vercel, Netlify, or Railway:
 ### Login Page
 
 ```tsx
-import { useAuth } from '@nightmar3/uauth-tanstack-start/client'
+import { useAuth } from '../auth/client'
 import { useState } from 'react'
 
 export function LoginPage() {
